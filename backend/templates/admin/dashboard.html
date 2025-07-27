@@ -1,0 +1,133 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}用户管理 - 学生健康管理系统{% endblock %}
+
+{% block content %}
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_users }}</div>
+        <div class="stat-label">总用户数</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        用户管理
+    </div>
+    <div class="card-body">
+        <div class="search-form">
+            <form method="GET" style="display: flex; gap: 1rem; align-items: end; width: 100%;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label for="search">搜索用户名</label>
+                    <input type="text" id="search" name="search" class="form-control" 
+                           value="{{ search_query }}" placeholder="输入用户名进行搜索">
+                </div>
+                <button type="submit" class="btn btn-primary">搜索</button>
+                {% if search_query %}
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">清除</a>
+                {% endif %}
+            </form>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <a href="{% url 'admin_user_create' %}" class="btn btn-success">+ 创建新用户</a>
+        </div>
+        
+        {% if page_obj %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in page_obj %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.userName }}</td>
+                        <td>{{ user.id }}</td>
+                        <td>
+                            <a href="{% url 'admin_user_detail' user.id %}" class="btn btn-sm btn-primary">查看</a>
+                            <a href="{% url 'admin_user_edit' user.id %}" class="btn btn-sm btn-success">编辑</a>
+                            <button onclick="deleteUser({{ user.id }}, '{{ user.userName }}')" 
+                                    class="btn btn-sm btn-danger">删除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- 分页 -->
+            {% if page_obj.has_other_pages %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">&laquo; 首页</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">上一页</a>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <span class="current">{{ num }}</span>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">下一页</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">末页 &raquo;</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <p>暂无用户数据。</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteUser(userId, userName) {
+    if (confirm('确定要删除用户 "' + userName + '" 吗？此操作不可撤销。')) {
+        fetch('/user/admin/user/' + userId + '/delete/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('删除失败: ' + error.message);
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

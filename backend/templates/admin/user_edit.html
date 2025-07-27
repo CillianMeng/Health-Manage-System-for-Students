@@ -1,0 +1,55 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}编辑用户 - 学生健康管理系统{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        编辑用户: {{ user.userName }}
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="userName">用户名 *</label>
+                <input type="text" id="userName" name="userName" class="form-control" 
+                       required maxlength="20" value="{{ user.userName }}" placeholder="请输入用户名">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">新密码</label>
+                <input type="password" id="password" name="password" class="form-control" 
+                       placeholder="留空则不修改密码">
+                <small style="color: #666; font-size: 0.9rem;">如果不需要修改密码，请留空</small>
+            </div>
+            
+            <div style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-success">保存修改</button>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">取消</a>
+                <a href="{% url 'admin_user_detail' user.id %}" class="btn btn-primary">查看详情</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-left: 1rem;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
