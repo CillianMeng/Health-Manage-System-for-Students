@@ -60,10 +60,21 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
+# Cookie和Session相关设置
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+# Session设置
+SESSION_COOKIE_AGE = 7 * 24 * 60 * 60  # 7天
+SESSION_COOKIE_SECURE = False  # 开发环境设为False，生产环境应设为True
+SESSION_COOKIE_HTTPONLY = True  # 防止XSS攻击
+SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF保护
+SESSION_SAVE_EVERY_REQUEST = True  # 每次请求都更新session过期时间
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
