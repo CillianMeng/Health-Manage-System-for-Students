@@ -376,6 +376,217 @@ curl -X GET "http://localhost:8000/user/sleep-statistics/?days=30" \
   --cookie cookies.txt
 ```
 
+### 运动记录相关接口
+
+#### 11. 获取运动记录列表
+
+**接口地址**: `GET /user/exercise-records/`
+
+**请求参数** (查询参数):
+- `days`: 获取最近几天的记录，默认30天
+- `exercise_type`: 运动类型筛选，可选值见下方运动类型列表
+- `page`: 页码，默认1
+- `page_size`: 每页记录数，默认10
+
+**成功响应** (200):
+```json
+{
+    "records": [
+        {
+            "id": 1,
+            "user": 1,
+            "user_name": "testuser",
+            "date": "2025-07-27",
+            "exercise_type": "running",
+            "exercise_type_display": "跑步",
+            "duration_minutes": 30,
+            "duration_hours": 0.5,
+            "calories_burned": 300,
+            "intensity_level": "中强度",
+            "notes": "晨跑，天气很好",
+            "created_at": "2025-07-27T06:30:00Z",
+            "updated_at": "2025-07-27T06:30:00Z"
+        }
+    ],
+    "pagination": {
+        "current_page": 1,
+        "total_pages": 2,
+        "total_records": 15,
+        "has_next": true,
+        "has_previous": false
+    }
+}
+```
+
+**示例请求**:
+```bash
+curl -X GET "http://localhost:8000/user/exercise-records/?days=7&exercise_type=running&page=1" \
+  --cookie cookies.txt
+```
+
+#### 12. 创建运动记录
+
+**接口地址**: `POST /user/exercise-records/create/`
+
+**请求参数** (JSON格式):
+- `date`: 日期 (YYYY-MM-DD格式，必填)
+- `exercise_type`: 运动类型 (必填，见下方运动类型列表)
+- `duration_minutes`: 运动时长(分钟) (必填，1-600)
+- `calories_burned`: 消耗卡路里 (必填，1-3000)
+- `notes`: 备注 (可选)
+
+**成功响应** (201):
+```json
+{
+    "message": "运动记录创建成功",
+    "record": {
+        "id": 2,
+        "user": 1,
+        "user_name": "testuser",
+        "date": "2025-07-28",
+        "exercise_type": "swimming",
+        "exercise_type_display": "游泳",
+        "duration_minutes": 45,
+        "duration_hours": 0.75,
+        "calories_burned": 540,
+        "intensity_level": "高强度",
+        "notes": "游泳池训练",
+        "created_at": "2025-07-28T10:15:00Z",
+        "updated_at": "2025-07-28T10:15:00Z"
+    }
+}
+```
+
+**示例请求**:
+```bash
+curl -X POST http://localhost:8000/user/exercise-records/create/ \
+  --cookie cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"date": "2025-07-28", "exercise_type": "swimming", "duration_minutes": 45, "calories_burned": 540, "notes": "游泳池训练"}'
+```
+
+#### 13. 获取运动记录详情
+
+**接口地址**: `GET /user/exercise-records/{record_id}/`
+
+**成功响应** (200):
+```json
+{
+    "record": {
+        "id": 1,
+        "user": 1,
+        "user_name": "testuser",
+        "date": "2025-07-27",
+        "exercise_type": "running",
+        "exercise_type_display": "跑步",
+        "duration_minutes": 30,
+        "duration_hours": 0.5,
+        "calories_burned": 300,
+        "intensity_level": "中强度",
+        "notes": "晨跑，天气很好",
+        "created_at": "2025-07-27T06:30:00Z",
+        "updated_at": "2025-07-27T06:30:00Z"
+    }
+}
+```
+
+#### 14. 更新运动记录
+
+**接口地址**: `PUT /user/exercise-records/{record_id}/`
+
+**请求参数**: 与创建运动记录相同，支持部分更新
+
+**成功响应** (200):
+```json
+{
+    "message": "运动记录更新成功",
+    "record": { /* 更新后的记录信息 */ }
+}
+```
+
+#### 15. 删除运动记录
+
+**接口地址**: `DELETE /user/exercise-records/{record_id}/`
+
+**成功响应** (200):
+```json
+{
+    "message": "运动记录删除成功"
+}
+```
+
+#### 16. 获取运动统计
+
+**接口地址**: `GET /user/exercise-statistics/`
+
+**请求参数** (查询参数):
+- `days`: 统计天数，默认30天
+
+**成功响应** (200):
+```json
+{
+    "statistics": {
+        "total_records": 15,
+        "total_duration_minutes": 450,
+        "total_calories_burned": 4500,
+        "average_duration_minutes": 30.0,
+        "average_calories_per_session": 300.0,
+        "exercise_type_distribution": {
+            "跑步": {
+                "count": 8,
+                "total_duration": 240,
+                "total_calories": 2400
+            },
+            "游泳": {
+                "count": 4,
+                "total_duration": 120,
+                "total_calories": 1440
+            },
+            "瑜伽": {
+                "count": 3,
+                "total_duration": 90,
+                "total_calories": 270
+            }
+        },
+        "most_frequent_exercise": {
+            "type": "跑步",
+            "count": 8
+        },
+        "date_range": {
+            "start_date": "2025-06-28",
+            "end_date": "2025-07-28",
+            "days": 30
+        }
+    }
+}
+```
+
+**示例请求**:
+```bash
+curl -X GET "http://localhost:8000/user/exercise-statistics/?days=30" \
+  --cookie cookies.txt
+```
+
+### 运动类型列表
+
+系统支持的运动类型及其代码：
+
+| 代码 | 显示名称 | 平均卡路里消耗(每分钟) |
+|------|----------|---------------------|
+| running | 跑步 | 10 |
+| walking | 步行 | 4 |
+| cycling | 骑行 | 8 |
+| swimming | 游泳 | 12 |
+| basketball | 篮球 | 9 |
+| football | 足球 | 9 |
+| tennis | 网球 | 7 |
+| badminton | 羽毛球 | 6 |
+| yoga | 瑜伽 | 3 |
+| fitness | 健身 | 6 |
+| dancing | 舞蹈 | 5 |
+| climbing | 爬山 | 11 |
+| other | 其他 | 5 |
+
 ## 数据模型
 
 ### User (用户模型)
@@ -404,6 +615,26 @@ curl -X GET "http://localhost:8000/user/sleep-statistics/?days=30" \
 - 睡眠时长会根据入睡时间和起床时间自动计算
 - 如果起床时间早于入睡时间，系统会认为是第二天起床
 - 提供 `sleep_duration_hours` 属性返回以小时为单位的睡眠时长
+
+### ExerciseRecord (运动记录模型)
+
+| 字段名 | 类型 | 说明 | 约束 |
+|--------|------|------|------|
+| id | Integer | 记录ID | 主键，自动递增 |
+| user | ForeignKey | 用户 | 外键，关联User模型 |
+| date | DateField | 运动日期 | 记录日期 |
+| exercise_type | CharField | 运动类型 | 见运动类型列表 |
+| duration_minutes | PositiveInteger | 运动时长(分钟) | 1-600分钟 |
+| calories_burned | PositiveInteger | 消耗卡路里 | 1-3000卡路里 |
+| notes | TextField | 备注 | 可选，记录运动详情 |
+| created_at | DateTimeField | 创建时间 | 自动添加 |
+| updated_at | DateTimeField | 更新时间 | 自动更新 |
+
+**说明**:
+- 用户可以在同一天创建多条运动记录
+- 提供 `duration_hours` 属性返回以小时为单位的运动时长
+- 提供 `get_intensity_level()` 方法根据卡路里消耗判断运动强度
+- 运动强度分为：高强度(≥10卡/分钟)、中强度(6-10卡/分钟)、低强度(3-6卡/分钟)、轻微活动(<3卡/分钟)
 
 ## 前端对接说明
 
@@ -574,6 +805,71 @@ async function getSleepStatistics(days = 7) {
         throw error;
     }
 }
+
+// 获取运动记录列表
+async function getExerciseRecords(days = 30, exerciseType = '', page = 1, pageSize = 10) {
+    try {
+        let url = `http://localhost:8000/user/exercise-records/?days=${days}&page=${page}&page_size=${pageSize}`;
+        if (exerciseType) {
+            url += `&exercise_type=${exerciseType}`;
+        }
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        console.error('获取运动记录失败:', error.response.data);
+        throw error;
+    }
+}
+
+// 创建运动记录
+async function createExerciseRecord(data) {
+    try {
+        const response = await axios.post('http://localhost:8000/user/exercise-records/create/', {
+            date: data.date,
+            exercise_type: data.exerciseType,
+            duration_minutes: data.durationMinutes,
+            calories_burned: data.caloriesBurned,
+            notes: data.notes || ''
+        });
+        return response.data;
+    } catch (error) {
+        console.error('创建运动记录失败:', error.response.data);
+        throw error;
+    }
+}
+
+// 更新运动记录
+async function updateExerciseRecord(recordId, data) {
+    try {
+        const response = await axios.put(`http://localhost:8000/user/exercise-records/${recordId}/`, data);
+        return response.data;
+    } catch (error) {
+        console.error('更新运动记录失败:', error.response.data);
+        throw error;
+    }
+}
+
+// 删除运动记录
+async function deleteExerciseRecord(recordId) {
+    try {
+        const response = await axios.delete(`http://localhost:8000/user/exercise-records/${recordId}/`);
+        return response.data;
+    } catch (error) {
+        console.error('删除运动记录失败:', error.response.data);
+        throw error;
+    }
+}
+
+// 获取运动统计
+async function getExerciseStatistics(days = 30) {
+    try {
+        const response = await axios.get(`http://localhost:8000/user/exercise-statistics/?days=${days}`);
+        return response.data;
+    } catch (error) {
+        console.error('获取运动统计失败:', error.response.data);
+        throw error;
+    }
+}
 ```
 
 #### Vue.js 示例
@@ -732,13 +1028,15 @@ export default {
 
 - [x] **后台管理系统**
   - [x] 用户管理界面
-  - [x] 睡眠记录查看
+  - [x] 睡眠记录管理
+  - [x] 运动记录管理
 
 后续可以扩展的功能：
 
 - [ ] JWT Token 认证
 - [ ] 用户个人信息管理（年龄、性别、身高体重等）
-- [ ] 其他健康数据记录（运动、饮食、心率等）
+- [x] 运动健康数据记录（已完成）
+- [ ] 其他健康数据记录（饮食、心率等）
 - [ ] 健康报告生成
 - [ ] 数据可视化图表
 - [ ] 健康提醒和建议
