@@ -96,3 +96,81 @@ class ExerciseRecord(models.Model):
             return "低强度"
         else:
             return "轻微活动"
+
+class FoodItem(models.Model):
+    """食物数据库模型"""
+    FOOD_CATEGORIES = [
+        ('grains', '谷物类'),
+        ('vegetables', '蔬菜类'),
+        ('fruits', '水果类'),
+        ('meat', '肉类'),
+        ('seafood', '海鲜类'),
+        ('dairy', '乳制品'),
+        ('nuts', '坚果类'),
+        ('beverages', '饮品类'),
+        ('snacks', '零食类'),
+        ('cooking_oil', '调料油脂'),
+        ('other', '其他'),
+    ]
+    
+    name = models.CharField(max_length=100, help_text="食物名称")
+    category = models.CharField(max_length=20, choices=FOOD_CATEGORIES, help_text="食物分类")
+    calories_per_100g = models.PositiveIntegerField(help_text="每100克的卡路里")
+    protein_per_100g = models.FloatField(default=0, help_text="每100克蛋白质含量(g)")
+    fat_per_100g = models.FloatField(default=0, help_text="每100克脂肪含量(g)")
+    carbs_per_100g = models.FloatField(default=0, help_text="每100克碳水化合物含量(g)")
+    common_serving_size = models.CharField(max_length=50, default="100g", help_text="常见分量描述")
+    common_serving_calories = models.PositiveIntegerField(help_text="常见分量的卡路里")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['category', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"
+
+class DietRecord(models.Model):
+    """饮食记录模型"""
+    MEAL_CHOICES = [
+        ('breakfast', '早餐'),
+        ('lunch', '午餐'),
+        ('dinner', '晚餐'),
+        ('snack', '加餐/零食'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='diet_records')
+    date = models.DateField(help_text="饮食记录的日期")
+    meal_type = models.CharField(max_length=20, choices=MEAL_CHOICES, help_text="餐次类型")
+    food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE, null=True, blank=True, help_text="选择的食物")
+    food_name = models.CharField(max_length=100, help_text="食物名称（手动输入或从数据库选择）")
+    serving_size = models.CharField(max_length=50, help_text="分量描述，如：1碗、100g、1个等")
+    serving_weight_grams = models.PositiveIntegerField(help_text="分量重量（克）")
+    calories = models.PositiveIntegerField(help_text="估算的卡路里数")
+    notes = models.TextField(blank=True, help_text="备注信息")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date', 'meal_type', '-created_at']
+
+    def __str__(self):
+        return f"{self.user.userName} - {self.get_meal_type_display()} - {self.food_name} - {self.date}"
+
+    def save(self, *args, **kwargs):
+        # 如果选择了食物数据库中的食物，自动计算卡路里
+        if self.food_item and self.serving_weight_grams:
+            calculated_calories = round((self.food_item.calories_per_100g * self.serving_weight_grams) / 100)
+            if not self.calories or self.calories == 0:
+                self.calories = calculated_calories
+            # 如果没有手动输入食物名称，使用数据库中的名称
+            if not self.food_name:
+                self.food_name = self.food_item.name
+        
+        super().save(*args, **kwargs)
+
+    @property
+    def calories_per_100g(self):
+        """计算每100克的卡路里（用于对比）"""
+        if self.serving_weight_grams > 0:
+            return round((self.calories * 100) / self.serving_weight_grams)
+        return 0

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from datetime import datetime, date, timedelta
-from .models import User, SleepRecord, ExerciseRecord
+from .models import User, SleepRecord, ExerciseRecord, FoodItem, DietRecord
 from .utils import set_user_password
 import json
 from django.http import JsonResponse
@@ -16,11 +16,13 @@ def admin_dashboard(request):
     total_users = User.objects.count()
     total_sleep_records = SleepRecord.objects.count()
     total_exercise_records = ExerciseRecord.objects.count()
+    total_diet_records = DietRecord.objects.count()
     
     # 最近7天的记录数
     seven_days_ago = date.today() - timedelta(days=7)
     recent_sleep_records = SleepRecord.objects.filter(date__gte=seven_days_ago).count()
     recent_exercise_records = ExerciseRecord.objects.filter(date__gte=seven_days_ago).count()
+    recent_diet_records = DietRecord.objects.filter(date__gte=seven_days_ago).count()
     
     # 搜索功能
     search_query = request.GET.get('search', '')
@@ -38,8 +40,10 @@ def admin_dashboard(request):
         'total_users': total_users,
         'total_sleep_records': total_sleep_records,
         'total_exercise_records': total_exercise_records,
+        'total_diet_records': total_diet_records,
         'recent_sleep_records': recent_sleep_records,
         'recent_exercise_records': recent_exercise_records,
+        'recent_diet_records': recent_diet_records,
         'page_obj': page_obj,
         'search_query': search_query,
     }
@@ -592,3 +596,235 @@ def admin_exercise_record_detail(request, record_id):
     """运动记录详情页面"""
     record = get_object_or_404(ExerciseRecord, id=record_id)
     return render(request, 'admin/exercise_record_detail.html', {'record': record})
+
+
+# 饮食记录管理相关视图
+
+def admin_diet_records(request):
+    """饮食记录管理页面"""
+    search_query = request.GET.get('search', '')
+    meal_type_filter = request.GET.get('meal_type', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    
+    records = DietRecord.objects.all()
+    
+    # 搜索功能
+    if search_query:
+        records = records.filter(
+            Q(user__userName__icontains=search_query) |
+            Q(food_name__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+    
+    # 餐次筛选
+    if meal_type_filter:
+        records = records.filter(meal_type=meal_type_filter)
+    
+    # 日期筛选
+    if start_date:
+        try:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            records = records.filter(date__gte=start_date_obj)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            records = records.filter(date__lte=end_date_obj)
+        except ValueError:
+            pass
+    
+    # 按日期倒序排列
+    records = records.order_by('-date', '-created_at')
+    
+    # 分页功能
+    paginator = Paginator(records, 20)  # 每页显示20条记录
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # 餐次选择
+    meal_choices = DietRecord.MEAL_CHOICES
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'meal_type_filter': meal_type_filter,
+        'start_date': start_date,
+        'end_date': end_date,
+        'meal_choices': meal_choices,
+    }
+    return render(request, 'admin/diet_records.html', context)
+
+def admin_diet_record_create(request):
+    """创建饮食记录页面"""
+    if request.method == 'POST':
+        try:
+            # 获取表单数据
+            user_id = request.POST.get('user_id')
+            date_str = request.POST.get('date')
+            meal_type = request.POST.get('meal_type')
+            food_item_id = request.POST.get('food_item')
+            food_name = request.POST.get('food_name')
+            serving_size = request.POST.get('serving_size')
+            serving_weight_grams = request.POST.get('serving_weight_grams')
+            calories = request.POST.get('calories')
+            notes = request.POST.get('notes', '')
+            
+            # 验证必填字段
+            if not all([user_id, date_str, meal_type]):
+                messages.error(request, '用户、日期和餐次为必填项')
+                return redirect('admin_diet_record_create')
+            
+            # 获取用户
+            user = get_object_or_404(User, id=user_id)
+            
+            # 转换日期
+            record_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            # 获取食物项目（如果选择了）
+            food_item = None
+            if food_item_id:
+                food_item = get_object_or_404(FoodItem, id=food_item_id)
+                # 如果没有提供食物名称，使用数据库中的名称
+                if not food_name:
+                    food_name = food_item.name
+            
+            # 验证至少有食物名称
+            if not food_name:
+                messages.error(request, '必须提供食物名称或选择食物数据库中的食物')
+                return redirect('admin_diet_record_create')
+            
+            # 创建饮食记录
+            diet_record = DietRecord.objects.create(
+                user=user,
+                date=record_date,
+                meal_type=meal_type,
+                food_item=food_item,
+                food_name=food_name,
+                serving_size=serving_size if serving_size else None,
+                serving_weight_grams=float(serving_weight_grams) if serving_weight_grams else None,
+                calories=float(calories) if calories else None,
+                notes=notes
+            )
+            
+            messages.success(request, f'饮食记录创建成功！记录ID: {diet_record.id}')
+            return redirect('admin_diet_records')
+            
+        except ValueError as e:
+            messages.error(request, f'数据格式错误: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'创建失败: {str(e)}')
+        
+        return redirect('admin_diet_record_create')
+    
+    # GET请求：显示创建表单
+    users = User.objects.all().order_by('userName')
+    foods = FoodItem.objects.all().order_by('category', 'name')
+    meal_choices = DietRecord.MEAL_CHOICES
+    
+    context = {
+        'users': users,
+        'foods': foods,
+        'meal_choices': meal_choices,
+    }
+    return render(request, 'admin/diet_record_create.html', context)
+
+def admin_diet_record_edit(request, record_id):
+    """编辑饮食记录页面"""
+    record = get_object_or_404(DietRecord, id=record_id)
+    
+    if request.method == 'POST':
+        try:
+            # 获取表单数据
+            user_id = request.POST.get('user_id')
+            date_str = request.POST.get('date')
+            meal_type = request.POST.get('meal_type')
+            food_item_id = request.POST.get('food_item')
+            food_name = request.POST.get('food_name')
+            serving_size = request.POST.get('serving_size')
+            serving_weight_grams = request.POST.get('serving_weight_grams')
+            calories = request.POST.get('calories')
+            notes = request.POST.get('notes', '')
+            
+            # 验证必填字段
+            if not all([user_id, date_str, meal_type]):
+                messages.error(request, '用户、日期和餐次为必填项')
+                return redirect('admin_diet_record_edit', record_id=record_id)
+            
+            # 获取用户
+            user = get_object_or_404(User, id=user_id)
+            
+            # 转换日期
+            record_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            # 获取食物项目（如果选择了）
+            food_item = None
+            if food_item_id:
+                food_item = get_object_or_404(FoodItem, id=food_item_id)
+                # 如果没有提供食物名称，使用数据库中的名称
+                if not food_name:
+                    food_name = food_item.name
+            
+            # 验证至少有食物名称
+            if not food_name:
+                messages.error(request, '必须提供食物名称或选择食物数据库中的食物')
+                return redirect('admin_diet_record_edit', record_id=record_id)
+            
+            # 更新饮食记录
+            record.user = user
+            record.date = record_date
+            record.meal_type = meal_type
+            record.food_item = food_item
+            record.food_name = food_name
+            record.serving_size = serving_size if serving_size else None
+            record.serving_weight_grams = float(serving_weight_grams) if serving_weight_grams else None
+            record.calories = float(calories) if calories else None
+            record.notes = notes
+            record.save()
+            
+            messages.success(request, '饮食记录更新成功！')
+            return redirect('admin_diet_record_detail', record_id=record.id)
+            
+        except ValueError as e:
+            messages.error(request, f'数据格式错误: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'更新失败: {str(e)}')
+    
+    # GET请求：显示编辑表单
+    users = User.objects.all().order_by('userName')
+    foods = FoodItem.objects.all().order_by('category', 'name')
+    meal_choices = DietRecord.MEAL_CHOICES
+    
+    context = {
+        'record': record,
+        'users': users,
+        'foods': foods,
+        'meal_choices': meal_choices,
+    }
+    return render(request, 'admin/diet_record_edit.html', context)
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def admin_diet_record_delete(request, record_id):
+    """删除饮食记录"""
+    try:
+        record = get_object_or_404(DietRecord, id=record_id)
+        record_info = f"{record.user.userName}的{record.get_meal_type_display()}记录"
+        record.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'饮食记录 "{record_info}" 删除成功'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'删除失败: {str(e)}'
+        }, status=500)
+
+def admin_diet_record_detail(request, record_id):
+    """饮食记录详情页面"""
+    record = get_object_or_404(DietRecord, id=record_id)
+    return render(request, 'admin/diet_record_detail.html', {'record': record})

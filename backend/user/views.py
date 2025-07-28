@@ -8,9 +8,10 @@ from django.core.paginator import Paginator
 from datetime import datetime, date, timedelta
 from .serializers import (
     LoginSerializer, SleepRecordSerializer, SleepRecordCreateSerializer,
-    ExerciseRecordSerializer, ExerciseRecordCreateSerializer
+    ExerciseRecordSerializer, ExerciseRecordCreateSerializer,
+    FoodItemSerializer, DietRecordSerializer, DietRecordCreateSerializer
 )
-from .models import User, SleepRecord, ExerciseRecord
+from .models import User, SleepRecord, ExerciseRecord, FoodItem, DietRecord
 from .utils import set_user_password
 import json
 # Create your views here.
@@ -577,6 +578,270 @@ class ExerciseStatisticsView(APIView):
                     "type": most_frequent_exercise[0],
                     "count": most_frequent_exercise[1]['count']
                 } if most_frequent_exercise else None,
+                "date_range": {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "days": days
+                }
+            }
+        }, status=status.HTTP_200_OK)
+
+
+# 饮食记录相关视图
+
+class FoodItemListView(APIView):
+    """获取食物数据库列表"""
+    
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        category = request.GET.get('category')
+        search = request.GET.get('search')
+        
+        queryset = FoodItem.objects.all()
+        
+        if category:
+            queryset = queryset.filter(category=category)
+        
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        
+        queryset = queryset.order_by('category', 'name')
+        
+        serializer = FoodItemSerializer(queryset, many=True)
+        return Response({
+            "message": "获取食物数据库成功",
+            "foods": serializer.data,
+            "total": queryset.count()
+        }, status=status.HTTP_200_OK)
+
+class DietRecordListView(APIView):
+    """获取饮食记录列表"""
+    
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # 获取查询参数
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        meal_type = request.GET.get('meal_type')
+        
+        # 构建查询条件
+        queryset = DietRecord.objects.filter(user=request.user)
+        
+        if start_date:
+            from datetime import datetime
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            queryset = queryset.filter(date__gte=start_date)
+        
+        if end_date:
+            from datetime import datetime
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            queryset = queryset.filter(date__lte=end_date)
+        
+        if meal_type:
+            queryset = queryset.filter(meal_type=meal_type)
+        
+        # 按日期倒序排列
+        queryset = queryset.order_by('-date', '-created_at')
+        
+        serializer = DietRecordSerializer(queryset, many=True)
+        return Response({
+            "message": "获取饮食记录成功",
+            "records": serializer.data,
+            "total": queryset.count()
+        }, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """创建饮食记录"""
+        if not request.user.is_authenticated:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        serializer = DietRecordCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            # 保存记录时添加用户信息
+            diet_record = serializer.save(user=request.user)
+            
+            # 返回完整的记录信息
+            response_serializer = DietRecordSerializer(diet_record)
+            return Response({
+                "message": "饮食记录创建成功",
+                "record": response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "error": "数据验证失败",
+                "details": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class DietRecordDetailView(APIView):
+    """饮食记录详情、更新、删除"""
+    
+    def get_object(self, record_id, user):
+        try:
+            return DietRecord.objects.get(id=record_id, user=user)
+        except DietRecord.DoesNotExist:
+            return None
+    
+    def get(self, request, record_id):
+        """获取饮食记录详情"""
+        if not request.user.is_authenticated:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        diet_record = self.get_object(record_id, request.user)
+        if not diet_record:
+            return Response({"error": "饮食记录不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = DietRecordSerializer(diet_record)
+        return Response({
+            "message": "获取饮食记录详情成功",
+            "record": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    def put(self, request, record_id):
+        """更新饮食记录"""
+        if not request.user.is_authenticated:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        diet_record = self.get_object(record_id, request.user)
+        if not diet_record:
+            return Response({"error": "饮食记录不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = DietRecordCreateSerializer(diet_record, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated_record = serializer.save()
+            
+            # 返回更新后的完整记录信息
+            response_serializer = DietRecordSerializer(updated_record)
+            return Response({
+                "message": "饮食记录更新成功",
+                "record": response_serializer.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "error": "数据验证失败",
+                "details": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, record_id):
+        """删除饮食记录"""
+        if not request.user.is_authenticated:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        diet_record = self.get_object(record_id, request.user)
+        if not diet_record:
+            return Response({"error": "饮食记录不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        diet_record.delete()
+        return Response({
+            "message": "饮食记录删除成功"
+        }, status=status.HTTP_204_NO_CONTENT)
+
+class DietStatisticsView(APIView):
+    """饮食统计视图"""
+    
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # 获取查询参数
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        days = int(request.GET.get('days', 7))  # 默认最近7天
+        
+        # 如果没有指定日期范围，使用最近N天
+        if not start_date or not end_date:
+            from datetime import date, timedelta
+            end_date = date.today()
+            start_date = end_date - timedelta(days=days-1)
+        else:
+            from datetime import datetime
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            days = (end_date - start_date).days + 1
+        
+        # 获取指定时间范围内的饮食记录
+        records = DietRecord.objects.filter(
+            user=request.user,
+            date__gte=start_date,
+            date__lte=end_date
+        )
+        
+        if not records.exists():
+            return Response({
+                "message": "暂无饮食记录",
+                "statistics": {
+                    "total_records": 0,
+                    "total_calories": 0,
+                    "average_daily_calories": 0,
+                    "meal_distribution": {
+                        "breakfast": 0,
+                        "lunch": 0,
+                        "dinner": 0,
+                        "snack": 0
+                    },
+                    "date_range": {
+                        "start_date": start_date,
+                        "end_date": end_date
+                    }
+                }
+            }, status=status.HTTP_200_OK)
+        
+        # 计算统计数据
+        total_calories = sum(record.calories for record in records if record.calories)
+        average_daily_calories = round(total_calories / days, 2) if days > 0 else 0
+        
+        # 按餐次统计
+        meal_counts = {}
+        meal_calories = {}
+        for meal_type, _ in DietRecord.MEAL_CHOICES:
+            meal_records = records.filter(meal_type=meal_type)
+            meal_counts[meal_type] = meal_records.count()
+            meal_calories[meal_type] = sum(r.calories for r in meal_records if r.calories)
+        
+        # 找出热量最高和最低的一天
+        from collections import defaultdict
+        daily_calories = defaultdict(int)
+        for record in records:
+            if record.calories:
+                daily_calories[record.date] += record.calories
+        
+        highest_day = max(daily_calories.items(), key=lambda x: x[1]) if daily_calories else None
+        lowest_day = min(daily_calories.items(), key=lambda x: x[1]) if daily_calories else None
+        
+        return Response({
+            "statistics": {
+                "total_records": len(records),
+                "total_calories": total_calories,
+                "average_daily_calories": average_daily_calories,
+                "meal_distribution": {
+                    "breakfast": {
+                        "count": meal_counts.get('breakfast', 0),
+                        "calories": meal_calories.get('breakfast', 0)
+                    },
+                    "lunch": {
+                        "count": meal_counts.get('lunch', 0),
+                        "calories": meal_calories.get('lunch', 0)
+                    },
+                    "dinner": {
+                        "count": meal_counts.get('dinner', 0),
+                        "calories": meal_calories.get('dinner', 0)
+                    },
+                    "snack": {
+                        "count": meal_counts.get('snack', 0),
+                        "calories": meal_calories.get('snack', 0)
+                    }
+                },
+                "highest_calorie_day": {
+                    "date": highest_day[0],
+                    "calories": highest_day[1]
+                } if highest_day else None,
+                "lowest_calorie_day": {
+                    "date": lowest_day[0],
+                    "calories": lowest_day[1]
+                } if lowest_day else None,
                 "date_range": {
                     "start_date": start_date,
                     "end_date": end_date,

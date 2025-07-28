@@ -1,0 +1,457 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}编辑饮食记录{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .form-group .required {
+        color: #dc3545;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+    }
+    
+    .current-info {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border-left: 4px solid #2196f3;
+    }
+    
+    .current-info h5 {
+        margin-bottom: 10px;
+        color: #1976d2;
+    }
+    
+    .current-info p {
+        margin: 5px 0;
+        color: #424242;
+    }
+    
+    .food-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 10px;
+        display: none;
+    }
+    
+    .food-info h6 {
+        margin-bottom: 10px;
+        color: #495057;
+    }
+    
+    .nutrition-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .nutrition-item:last-child {
+        border-bottom: none;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        transition: background-color 0.3s;
+    }
+    
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #0056b3;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #545b62;
+        text-decoration: none;
+        color: white;
+    }
+    
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+    }
+    
+    .btn-info:hover {
+        background: #138496;
+        text-decoration: none;
+        color: white;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .alert {
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .meal-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: white;
+        display: inline-block;
+    }
+    
+    .meal-breakfast { background: #28a745; }
+    .meal-lunch { background: #ffc107; color: #212529; }
+    .meal-dinner { background: #17a2b8; }
+    .meal-snack { background: #6f42c1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>编辑饮食记录</h1>
+        <div>
+            <a href="{% url 'admin_diet_record_detail' record.id %}" class="btn btn-info">
+                <i class="fas fa-eye"></i> 查看详情
+            </a>
+            <a href="{% url 'admin_diet_records' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回列表
+            </a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- 当前记录信息 -->
+    <div class="current-info">
+        <h5><i class="fas fa-info-circle"></i> 当前记录信息</h5>
+        <p><strong>用户：</strong>{{ record.user.userName }}</p>
+        <p><strong>日期：</strong>{{ record.date }}</p>
+        <p><strong>餐次：</strong><span class="meal-badge meal-{{ record.meal_type }}">{{ record.get_meal_type_display }}</span></p>
+        <p><strong>食物：</strong>{{ record.food_name }}</p>
+        {% if record.calories %}
+        <p><strong>卡路里：</strong>{{ record.calories }} kcal</p>
+        {% endif %}
+    </div>
+    
+    <div class="form-container">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="user_id">用户 <span class="required">*</span></label>
+                    <select name="user_id" id="user_id" class="form-control" required>
+                        <option value="">请选择用户</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}" {% if user.id == record.user.id %}selected{% endif %}>
+                                {{ user.userName }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="date">日期 <span class="required">*</span></label>
+                    <input type="date" 
+                           name="date" 
+                           id="date" 
+                           class="form-control" 
+                           value="{{ record.date|date:'Y-m-d' }}"
+                           required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="meal_type">餐次 <span class="required">*</span></label>
+                <select name="meal_type" id="meal_type" class="form-control" required>
+                    <option value="">请选择餐次</option>
+                    {% for value, display in meal_choices %}
+                        <option value="{{ value }}" {% if value == record.meal_type %}selected{% endif %}>
+                            {{ display }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="food_item">食物数据库</label>
+                <select name="food_item" id="food_item" class="form-control">
+                    <option value="">选择数据库中的食物（可选）</option>
+                    {% regroup foods by category as food_groups %}
+                    {% for group in food_groups %}
+                        <optgroup label="{{ group.grouper|default:'其他' }}">
+                            {% for food in group.list %}
+                                <option value="{{ food.id }}" 
+                                        {% if record.food_item and food.id == record.food_item.id %}selected{% endif %}
+                                        data-name="{{ food.name }}"
+                                        data-calories="{{ food.calories_per_100g }}"
+                                        data-protein="{{ food.protein_per_100g }}"
+                                        data-fat="{{ food.fat_per_100g }}"
+                                        data-carbs="{{ food.carbs_per_100g }}"
+                                        data-serving="{{ food.common_serving_size }}"
+                                        data-serving-calories="{{ food.common_serving_calories }}">
+                                    {{ food.name }} ({{ food.calories_per_100g }}kcal/100g)
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                </select>
+                <div class="help-text">
+                    选择数据库中的食物可自动填充营养信息，也可以手动输入食物名称
+                </div>
+                
+                <!-- 营养信息显示 -->
+                <div id="food-info" class="food-info" {% if record.food_item %}style="display: block;"{% endif %}>
+                    <h6>营养信息 (每100g)</h6>
+                    <div class="nutrition-item">
+                        <span>热量:</span>
+                        <span id="info-calories">
+                            {% if record.food_item %}{{ record.food_item.calories_per_100g }} kcal{% else %}-{% endif %}
+                        </span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span>蛋白质:</span>
+                        <span id="info-protein">
+                            {% if record.food_item %}{{ record.food_item.protein_per_100g }} g{% else %}-{% endif %}
+                        </span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span>脂肪:</span>
+                        <span id="info-fat">
+                            {% if record.food_item %}{{ record.food_item.fat_per_100g }} g{% else %}-{% endif %}
+                        </span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span>碳水化合物:</span>
+                        <span id="info-carbs">
+                            {% if record.food_item %}{{ record.food_item.carbs_per_100g }} g{% else %}-{% endif %}
+                        </span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span>常见分量:</span>
+                        <span id="info-serving">
+                            {% if record.food_item and record.food_item.common_serving_size %}{{ record.food_item.common_serving_size }}{% else %}-{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="food_name">食物名称</label>
+                <input type="text" 
+                       name="food_name" 
+                       id="food_name" 
+                       class="form-control"
+                       value="{{ record.food_name }}"
+                       placeholder="输入食物名称">
+                <div class="help-text">
+                    如果选择了数据库食物，此字段会自动填充；也可以手动输入自定义食物名称
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="serving_size">分量描述</label>
+                    <input type="text" 
+                           name="serving_size" 
+                           id="serving_size" 
+                           class="form-control"
+                           value="{{ record.serving_size|default:'' }}"
+                           placeholder="例如：1个、半碗、2片等">
+                </div>
+                
+                <div class="form-group">
+                    <label for="serving_weight_grams">重量 (g)</label>
+                    <input type="number" 
+                           name="serving_weight_grams" 
+                           id="serving_weight_grams" 
+                           class="form-control"
+                           value="{{ record.serving_weight_grams|default:'' }}"
+                           min="0" 
+                           step="0.1"
+                           placeholder="例如：100">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="calories">卡路里 (kcal)</label>
+                <input type="number" 
+                       name="calories" 
+                       id="calories" 
+                       class="form-control"
+                       value="{{ record.calories|default:'' }}"
+                       min="0" 
+                       step="0.1"
+                       placeholder="例如：250">
+                <div class="help-text">
+                    如果填写了重量，系统可以根据数据库食物自动计算卡路里
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">备注</label>
+                <textarea name="notes" 
+                         id="notes" 
+                         class="form-control" 
+                         rows="3"
+                         placeholder="记录额外信息，如烹饪方式、用餐地点等...">{{ record.notes|default:'' }}</textarea>
+            </div>
+            
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> 保存修改
+                </button>
+                <a href="{% url 'admin_diet_record_detail' record.id %}" class="btn btn-info">
+                    <i class="fas fa-eye"></i> 查看详情
+                </a>
+                <a href="{% url 'admin_diet_records' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> 取消
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const foodSelect = document.getElementById('food_item');
+    const foodNameInput = document.getElementById('food_name');
+    const servingSizeInput = document.getElementById('serving_size');
+    const weightInput = document.getElementById('serving_weight_grams');
+    const caloriesInput = document.getElementById('calories');
+    const foodInfo = document.getElementById('food-info');
+    
+    foodSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (selectedOption.value) {
+            // 填充食物名称
+            foodNameInput.value = selectedOption.dataset.name;
+            
+            // 显示营养信息
+            document.getElementById('info-calories').textContent = selectedOption.dataset.calories + ' kcal';
+            document.getElementById('info-protein').textContent = selectedOption.dataset.protein + ' g';
+            document.getElementById('info-fat').textContent = selectedOption.dataset.fat + ' g';
+            document.getElementById('info-carbs').textContent = selectedOption.dataset.carbs + ' g';
+            document.getElementById('info-serving').textContent = selectedOption.dataset.serving || '-';
+            
+            foodInfo.style.display = 'block';
+            
+            // 如果有常见分量信息，询问是否要使用
+            if (selectedOption.dataset.serving && !servingSizeInput.value) {
+                if (confirm('是否使用食物数据库中的常见分量？')) {
+                    servingSizeInput.value = selectedOption.dataset.serving;
+                }
+            }
+            
+            // 计算卡路里
+            updateCalories();
+        } else {
+            foodInfo.style.display = 'none';
+        }
+    });
+    
+    // 当重量改变时，重新计算卡路里
+    weightInput.addEventListener('input', updateCalories);
+    
+    function updateCalories() {
+        const selectedOption = foodSelect.options[foodSelect.selectedIndex];
+        const weight = parseFloat(weightInput.value);
+        
+        if (selectedOption.value && weight && selectedOption.dataset.calories) {
+            const caloriesPer100g = parseFloat(selectedOption.dataset.calories);
+            const totalCalories = Math.round((caloriesPer100g * weight / 100) * 10) / 10;
+            
+            if (confirm('是否使用计算得出的卡路里值？')) {
+                caloriesInput.value = totalCalories;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

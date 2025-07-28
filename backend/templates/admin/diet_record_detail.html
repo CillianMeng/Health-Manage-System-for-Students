@@ -1,0 +1,439 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}饮食记录详情{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .detail-header {
+        background: linear-gradient(135deg, #FF6B35, #F7931E);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .detail-header h2 {
+        margin: 0 0 10px 0;
+        font-size: 1.8em;
+    }
+    
+    .detail-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 1.1em;
+    }
+    
+    .detail-body {
+        padding: 30px;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .info-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    .info-section h4 {
+        margin-bottom: 15px;
+        color: #495057;
+        font-size: 1.2em;
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 8px;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        color: #495057;
+        font-weight: 500;
+    }
+    
+    .meal-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+    }
+    
+    .meal-breakfast { background: #28a745; }
+    .meal-lunch { background: #ffc107; color: #212529; }
+    .meal-dinner { background: #17a2b8; }
+    .meal-snack { background: #6f42c1; }
+    
+    .calories-highlight {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #FF6B35;
+    }
+    
+    .food-info-section {
+        grid-column: 1 / -1;
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+    }
+    
+    .nutrition-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .nutrition-item {
+        text-align: center;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .nutrition-value {
+        font-size: 1.4em;
+        font-weight: bold;
+        color: #2196f3;
+        display: block;
+    }
+    
+    .nutrition-label {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .notes-section {
+        grid-column: 1 / -1;
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .notes-content {
+        background: white;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        margin-top: 10px;
+        line-height: 1.6;
+    }
+    
+    .actions-container {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+    
+    .btn i {
+        font-size: 14px;
+    }
+    
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #0056b3;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #1e7e34;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c82333;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #545b62;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .timestamp-info {
+        font-size: 0.9em;
+        color: #6c757d;
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .empty-value {
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    @media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .actions-container {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>饮食记录详情</h1>
+        <a href="{% url 'admin_diet_records' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 返回列表
+        </a>
+    </div>
+    
+    <div class="detail-container">
+        <div class="detail-header">
+            <h2>{{ record.user.userName }} 的饮食记录</h2>
+            <p>{{ record.date }} - {{ record.get_meal_type_display }}</p>
+        </div>
+        
+        <div class="detail-body">
+            <div class="info-grid">
+                <!-- 基本信息 -->
+                <div class="info-section">
+                    <h4><i class="fas fa-info-circle"></i> 基本信息</h4>
+                    <div class="info-item">
+                        <span class="info-label">用户</span>
+                        <span class="info-value">{{ record.user.userName }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">日期</span>
+                        <span class="info-value">{{ record.date }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">餐次</span>
+                        <span class="meal-badge meal-{{ record.meal_type }}">
+                            {{ record.get_meal_type_display }}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">食物名称</span>
+                        <span class="info-value">{{ record.food_name }}</span>
+                    </div>
+                </div>
+                
+                <!-- 分量信息 -->
+                <div class="info-section">
+                    <h4><i class="fas fa-balance-scale"></i> 分量信息</h4>
+                    <div class="info-item">
+                        <span class="info-label">分量描述</span>
+                        <span class="info-value">
+                            {% if record.serving_size %}
+                                {{ record.serving_size }}
+                            {% else %}
+                                <span class="empty-value">未记录</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">重量</span>
+                        <span class="info-value">
+                            {% if record.serving_weight_grams %}
+                                {{ record.serving_weight_grams }} g
+                            {% else %}
+                                <span class="empty-value">未记录</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">卡路里</span>
+                        <span class="info-value">
+                            {% if record.calories %}
+                                <span class="calories-highlight">{{ record.calories }} kcal</span>
+                            {% else %}
+                                <span class="empty-value">未记录</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- 食物数据库信息 -->
+                {% if record.food_item %}
+                <div class="info-section food-info-section">
+                    <h4><i class="fas fa-database"></i> 食物数据库信息</h4>
+                    <div class="info-item">
+                        <span class="info-label">食物类别</span>
+                        <span class="info-value">{{ record.food_item.get_category_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">数据库名称</span>
+                        <span class="info-value">{{ record.food_item.name }}</span>
+                    </div>
+                    
+                    <div class="nutrition-grid">
+                        <div class="nutrition-item">
+                            <span class="nutrition-value">{{ record.food_item.calories_per_100g }}</span>
+                            <div class="nutrition-label">卡路里/100g</div>
+                        </div>
+                        <div class="nutrition-item">
+                            <span class="nutrition-value">{{ record.food_item.protein_per_100g }}</span>
+                            <div class="nutrition-label">蛋白质/100g</div>
+                        </div>
+                        <div class="nutrition-item">
+                            <span class="nutrition-value">{{ record.food_item.fat_per_100g }}</span>
+                            <div class="nutrition-label">脂肪/100g</div>
+                        </div>
+                        <div class="nutrition-item">
+                            <span class="nutrition-value">{{ record.food_item.carbs_per_100g }}</span>
+                            <div class="nutrition-label">碳水/100g</div>
+                        </div>
+                    </div>
+                    
+                    {% if record.food_item.common_serving_size %}
+                    <div class="info-item">
+                        <span class="info-label">常见分量</span>
+                        <span class="info-value">
+                            {{ record.food_item.common_serving_size }}
+                            {% if record.food_item.common_serving_calories %}
+                                (约 {{ record.food_item.common_serving_calories }} kcal)
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- 备注信息 -->
+                {% if record.notes %}
+                <div class="info-section notes-section">
+                    <h4><i class="fas fa-sticky-note"></i> 备注信息</h4>
+                    <div class="notes-content">
+                        {{ record.notes|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="actions-container">
+                <a href="{% url 'admin_diet_record_edit' record.id %}" class="btn btn-success">
+                    <i class="fas fa-edit"></i> 编辑记录
+                </a>
+                <button onclick="deleteRecord()" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> 删除记录
+                </button>
+                <a href="{% url 'admin_diet_records' %}" class="btn btn-primary">
+                    <i class="fas fa-list"></i> 记录列表
+                </a>
+            </div>
+            
+            <!-- 时间戳信息 -->
+            <div class="timestamp-info">
+                <div>创建时间：{{ record.created_at|date:"Y-m-d H:i:s" }}</div>
+                {% if record.updated_at != record.created_at %}
+                    <div>更新时间：{{ record.updated_at|date:"Y-m-d H:i:s" }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteRecord() {
+    const recordName = '{{ record.user.userName }}的{{ record.get_meal_type_display }}记录';
+    
+    if (confirm(`确定要删除"${recordName}"吗？此操作不可恢复。`)) {
+        fetch(`/user/admin/diet-records/{{ record.id }}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = '{% url "admin_diet_records" %}';
+            } else {
+                alert('删除失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除时发生错误，请重试');
+        });
+    }
+}
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+</script>
+{% endblock %}
