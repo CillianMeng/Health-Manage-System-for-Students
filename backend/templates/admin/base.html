@@ -259,8 +259,11 @@
     </header>
     
     <nav class="nav">
-        <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">用户管理</a>
+        <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">首页</a>
+        <a href="{% url 'admin_dashboard' %}" class="{% if 'user' in request.resolver_match.url_name and 'sleep' not in request.resolver_match.url_name %}active{% endif %}">用户管理</a>
+        <a href="{% url 'admin_sleep_records' %}" class="{% if 'sleep' in request.resolver_match.url_name %}active{% endif %}">睡眠记录管理</a>
         <a href="{% url 'admin_user_create' %}" class="{% if request.resolver_match.url_name == 'admin_user_create' %}active{% endif %}">创建用户</a>
+        <a href="{% url 'admin_sleep_record_create' %}" class="{% if request.resolver_match.url_name == 'admin_sleep_record_create' %}active{% endif %}">添加睡眠记录</a>
     </nav>
     
     <div class="container">

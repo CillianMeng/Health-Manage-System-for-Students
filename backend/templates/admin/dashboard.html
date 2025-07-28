@@ -1,12 +1,20 @@
 {% extends 'admin/base.html' %}
 
-{% block title %}用户管理 - 学生健康管理系统{% endblock %}
+{% block title %}后台管理首页 - 学生健康管理系统{% endblock %}
 
 {% block content %}
 <div class="stats">
     <div class="stat-card">
         <div class="stat-number">{{ total_users }}</div>
         <div class="stat-label">总用户数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_sleep_records }}</div>
+        <div class="stat-label">总睡眠记录数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ recent_sleep_records }}</div>
+        <div class="stat-label">最近7天记录数</div>
     </div>
 </div>
 

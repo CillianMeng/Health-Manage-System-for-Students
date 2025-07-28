@@ -1,0 +1,79 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}编辑睡眠记录 - 学生健康管理系统{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        编辑睡眠记录 - {{ record.user.userName }} ({{ record.date }})
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="user">用户</label>
+                <input type="text" class="form-control" value="{{ record.user.userName }}" disabled>
+                <small style="color: #666; font-size: 0.9rem;">用户信息不可修改</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="date">日期 *</label>
+                <input type="date" id="date" name="date" class="form-control" 
+                       required value="{{ record.date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="sleep_time">入睡时间 *</label>
+                <input type="time" id="sleep_time" name="sleep_time" class="form-control" 
+                       required value="{{ record.sleep_time|time:'H:i' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="wake_time">起床时间 *</label>
+                <input type="time" id="wake_time" name="wake_time" class="form-control" 
+                       required value="{{ record.wake_time|time:'H:i' }}">
+            </div>
+            
+            <div class="form-group">
+                <label>当前睡眠时长</label>
+                <input type="text" class="form-control" 
+                       value="{% if record.sleep_duration_hours %}{{ record.sleep_duration_hours }}小时{% else %}未计算{% endif %}" 
+                       disabled>
+                <small style="color: #666; font-size: 0.9rem;">睡眠时长会根据入睡和起床时间自动计算</small>
+            </div>
+            
+            <div style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-success">保存修改</button>
+                <a href="{% url 'admin_sleep_records' %}" class="btn btn-secondary">取消</a>
+                <a href="{% url 'admin_sleep_record_detail' record.id %}" class="btn btn-primary">查看详情</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-left: 1rem;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+
+.form-control {
+    width: 100%;
+    max-width: 400px;
+}
+</style>
+{% endblock %}

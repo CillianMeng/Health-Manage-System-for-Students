@@ -1,0 +1,149 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}睡眠记录详情 - 学生健康管理系统{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        睡眠记录详情
+    </div>
+    <div class="card-body">
+        <div class="detail-row">
+            <strong>记录ID:</strong> {{ record.id }}
+        </div>
+        <div class="detail-row">
+            <strong>用户名:</strong> {{ record.user.userName }}
+        </div>
+        <div class="detail-row">
+            <strong>记录日期:</strong> {{ record.date }}
+        </div>
+        <div class="detail-row">
+            <strong>入睡时间:</strong> {{ record.sleep_time }}
+        </div>
+        <div class="detail-row">
+            <strong>起床时间:</strong> {{ record.wake_time }}
+        </div>
+        <div class="detail-row">
+            <strong>睡眠时长:</strong> 
+            {% if record.sleep_duration_hours %}
+                <span style="color: #27ae60; font-weight: bold;">{{ record.sleep_duration_hours }}小时</span>
+            {% else %}
+                <span style="color: #e74c3c;">未计算</span>
+            {% endif %}
+        </div>
+        <div class="detail-row">
+            <strong>记录创建时间:</strong> {{ record.created_at|date:"Y-m-d H:i:s" }}
+        </div>
+        <div class="detail-row">
+            <strong>最后更新时间:</strong> {{ record.updated_at|date:"Y-m-d H:i:s" }}
+        </div>
+        
+        <!-- 睡眠质量评估 -->
+        <div class="detail-row">
+            <strong>睡眠质量评估:</strong>
+            {% if record.sleep_duration_hours %}
+                {% if record.sleep_duration_hours >= 8 %}
+                    <span style="color: #27ae60; font-weight: bold;">优秀 (≥8小时)</span>
+                {% elif record.sleep_duration_hours >= 7 %}
+                    <span style="color: #f39c12; font-weight: bold;">良好 (7-8小时)</span>
+                {% elif record.sleep_duration_hours >= 6 %}
+                    <span style="color: #e67e22; font-weight: bold;">一般 (6-7小时)</span>
+                {% else %}
+                    <span style="color: #e74c3c; font-weight: bold;">不足 (<6小时)</span>
+                {% endif %}
+            {% else %}
+                <span style="color: #95a5a6;">无法评估</span>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'admin_sleep_record_edit' record.id %}" class="btn btn-success">编辑记录</a>
+            <a href="{% url 'admin_sleep_records' %}" class="btn btn-secondary">返回列表</a>
+            <a href="{% url 'admin_user_detail' record.user.id %}" class="btn btn-primary">查看用户详情</a>
+            <button onclick="deleteSleepRecord({{ record.id }}, '{{ record.user.userName }}', '{{ record.date }}')" 
+                    class="btn btn-danger">删除记录</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.detail-row {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row strong {
+    min-width: 150px;
+    display: inline-block;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-left: 1rem;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteSleepRecord(recordId, userName, recordDate) {
+    if (confirm('确定要删除用户 "' + userName + '" 在 "' + recordDate + '" 的睡眠记录吗？此操作不可撤销。')) {
+        fetch('/user/admin/sleep-records/' + recordId + '/delete/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = '/user/admin/sleep-records/';
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('删除失败: ' + error.message);
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

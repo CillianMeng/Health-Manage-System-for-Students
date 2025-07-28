@@ -27,6 +27,66 @@
         </div>
     </div>
 </div>
+
+<!-- 睡眠记录部分 -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>睡眠记录</span>
+            <a href="{% url 'admin_sleep_record_create' %}?user_id={{ user.id }}" class="btn btn-primary btn-sm">
+                添加睡眠记录
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if sleep_records %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>入睡时间</th>
+                            <th>起床时间</th>
+                            <th>睡眠时长</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in sleep_records %}
+                        <tr>
+                            <td>{{ record.date }}</td>
+                            <td>{{ record.sleep_time }}</td>
+                            <td>{{ record.wake_time }}</td>
+                            <td>
+                                {% if record.sleep_duration_hours %}
+                                    {{ record.sleep_duration_hours }}小时
+                                {% else %}
+                                    未计算
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'admin_sleep_record_detail' record.id %}" 
+                                   class="btn btn-info btn-sm">查看</a>
+                                <a href="{% url 'admin_sleep_record_edit' record.id %}" 
+                                   class="btn btn-success btn-sm">编辑</a>
+                                <button onclick="deleteSleepRecord({{ record.id }}, '{{ record.date }}')" 
+                                        class="btn btn-danger btn-sm">删除</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">该用户暂无睡眠记录。</p>
+        {% endif %}
+        
+        <div style="margin-top: 1rem;">
+            <a href="{% url 'admin_sleep_records' %}?user_search={{ user.userName }}" 
+               class="btn btn-secondary">查看所有睡眠记录</a>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -76,6 +136,30 @@ function deleteUser(userId, userName) {
             if (data.success) {
                 alert(data.message);
                 window.location.href = '/user/admin/';
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('删除失败: ' + error.message);
+        });
+    }
+}
+
+function deleteSleepRecord(recordId, recordDate) {
+    if (confirm('确定要删除 "' + recordDate + '" 的睡眠记录吗？此操作不可撤销。')) {
+        fetch('/user/admin/sleep-records/' + recordId + '/delete/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // 刷新页面以更新睡眠记录列表
             } else {
                 alert('删除失败: ' + data.message);
             }

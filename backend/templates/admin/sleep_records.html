@@ -1,0 +1,190 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}睡眠记录管理 - 学生健康管理系统{% endblock %}
+
+{% block content %}
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_records }}</div>
+        <div class="stat-label">总记录数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ avg_sleep_duration }}</div>
+        <div class="stat-label">平均睡眠时长(小时)</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        睡眠记录管理
+    </div>
+    <div class="card-body">
+        <!-- 搜索和筛选表单 -->
+        <div class="filter-form">
+            <form method="GET" style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap; margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="user_search">用户名</label>
+                    <input type="text" id="user_search" name="user_search" class="form-control" 
+                           value="{{ user_search }}" placeholder="搜索用户名">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="date_from">开始日期</label>
+                    <input type="date" id="date_from" name="date_from" class="form-control" 
+                           value="{{ date_from }}">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="date_to">结束日期</label>
+                    <input type="date" id="date_to" name="date_to" class="form-control" 
+                           value="{{ date_to }}">
+                </div>
+                <button type="submit" class="btn btn-primary">搜索</button>
+                {% if user_search or date_from or date_to %}
+                    <a href="{% url 'admin_sleep_records' %}" class="btn btn-secondary">清除</a>
+                {% endif %}
+            </form>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <a href="{% url 'admin_sleep_record_create' %}" class="btn btn-success">+ 添加睡眠记录</a>
+        </div>
+        
+        {% if page_obj %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>日期</th>
+                        <th>入睡时间</th>
+                        <th>起床时间</th>
+                        <th>睡眠时长</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in page_obj %}
+                    <tr>
+                        <td>{{ record.id }}</td>
+                        <td>{{ record.user.userName }}</td>
+                        <td>{{ record.date }}</td>
+                        <td>{{ record.sleep_time }}</td>
+                        <td>{{ record.wake_time }}</td>
+                        <td>
+                            {% if record.sleep_duration_hours %}
+                                {{ record.sleep_duration_hours }}小时
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ record.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="{% url 'admin_sleep_record_detail' record.id %}" class="btn btn-sm btn-primary">查看</a>
+                            <a href="{% url 'admin_sleep_record_edit' record.id %}" class="btn btn-sm btn-success">编辑</a>
+                            <button onclick="deleteSleepRecord({{ record.id }}, '{{ record.user.userName }}', '{{ record.date }}')" 
+                                    class="btn btn-sm btn-danger">删除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- 分页 -->
+            {% if page_obj.has_other_pages %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if user_search %}&user_search={{ user_search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">&laquo; 首页</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if user_search %}&user_search={{ user_search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">上一页</a>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <span class="current">{{ num }}</span>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <a href="?page={{ num }}{% if user_search %}&user_search={{ user_search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if user_search %}&user_search={{ user_search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">下一页</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if user_search %}&user_search={{ user_search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">末页 &raquo;</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <p>暂无睡眠记录数据。</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.filter-form {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteSleepRecord(recordId, userName, recordDate) {
+    if (confirm('确定要删除用户 "' + userName + '" 在 "' + recordDate + '" 的睡眠记录吗？此操作不可撤销。')) {
+        fetch('/user/admin/sleep-records/' + recordId + '/delete/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('删除失败: ' + error.message);
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
