@@ -87,6 +87,66 @@
         </div>
     </div>
 </div>
+
+<!-- 运动记录部分 -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>运动记录</span>
+            <a href="{% url 'admin_exercise_record_create' %}?user_id={{ user.id }}" class="btn btn-primary btn-sm">
+                添加运动记录
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if exercise_records %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>运动类型</th>
+                            <th>时长</th>
+                            <th>消耗卡路里</th>
+                            <th>强度</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in exercise_records %}
+                        <tr>
+                            <td>{{ record.date }}</td>
+                            <td>{{ record.get_exercise_type_display }}</td>
+                            <td>{{ record.duration_minutes }}分钟</td>
+                            <td>{{ record.calories_burned }}卡</td>
+                            <td>
+                                <span class="intensity-badge intensity-{{ record.get_intensity_level }}">
+                                    {{ record.get_intensity_level }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'admin_exercise_record_detail' record.id %}" 
+                                   class="btn btn-info btn-sm">查看</a>
+                                <a href="{% url 'admin_exercise_record_edit' record.id %}" 
+                                   class="btn btn-success btn-sm">编辑</a>
+                                <button onclick="deleteExerciseRecord({{ record.id }}, '{{ record.get_exercise_type_display }}', '{{ record.date }}')" 
+                                        class="btn btn-danger btn-sm">删除</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">该用户暂无运动记录。</p>
+        {% endif %}
+        
+        <div style="margin-top: 1rem;">
+            <a href="{% url 'admin_exercise_records' %}?user_search={{ user.userName }}" 
+               class="btn btn-secondary">查看所有运动记录</a>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -99,6 +159,30 @@
 
 .detail-row:last-child {
     border-bottom: none;
+}
+
+.intensity-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: white;
+}
+
+.intensity-高强度 {
+    background-color: #e74c3c;
+}
+
+.intensity-中强度 {
+    background-color: #f39c12;
+}
+
+.intensity-低强度 {
+    background-color: #3498db;
+}
+
+.intensity-轻微活动 {
+    background-color: #95a5a6;
 }
 
 .btn-secondary {
@@ -160,6 +244,30 @@ function deleteSleepRecord(recordId, recordDate) {
             if (data.success) {
                 alert(data.message);
                 location.reload(); // 刷新页面以更新睡眠记录列表
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('删除失败: ' + error.message);
+        });
+    }
+}
+
+function deleteExerciseRecord(recordId, exerciseType, recordDate) {
+    if (confirm('确定要删除 "' + recordDate + '" 的' + exerciseType + '记录吗？此操作不可撤销。')) {
+        fetch('/user/admin/exercise-records/' + recordId + '/delete/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // 刷新页面以更新运动记录列表
             } else {
                 alert('删除失败: ' + data.message);
             }

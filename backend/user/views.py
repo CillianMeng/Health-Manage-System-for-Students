@@ -6,8 +6,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.paginator import Paginator
 from datetime import datetime, date, timedelta
-from .serializers import LoginSerializer, SleepRecordSerializer, SleepRecordCreateSerializer
-from .models import User, SleepRecord
+from .serializers import (
+    LoginSerializer, SleepRecordSerializer, SleepRecordCreateSerializer,
+    ExerciseRecordSerializer, ExerciseRecordCreateSerializer
+)
+from .models import User, SleepRecord, ExerciseRecord
 from .utils import set_user_password
 import json
 # Create your views here.
@@ -334,6 +337,246 @@ class SleepStatisticsView(APIView):
                     "date": shortest_sleep.date, 
                     "hours": shortest_sleep.sleep_duration_hours
                 } if shortest_sleep else None,
+                "date_range": {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "days": days
+                }
+            }
+        }, status=status.HTTP_200_OK)
+
+
+# 运动记录相关视图
+class ExerciseRecordListView(APIView):
+    def get(self, request):
+        """获取当前用户的运动记录列表"""
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 获取查询参数
+        days = request.GET.get('days', 30)  # 默认获取最近30天
+        exercise_type = request.GET.get('exercise_type', '')  # 运动类型筛选
+        
+        try:
+            days = int(days)
+        except ValueError:
+            days = 30
+        
+        # 计算日期范围
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days-1)
+        
+        # 查询运动记录
+        records = ExerciseRecord.objects.filter(
+            user=user,
+            date__gte=start_date,
+            date__lte=end_date
+        )
+        
+        # 按运动类型筛选
+        if exercise_type:
+            records = records.filter(exercise_type=exercise_type)
+        
+        records = records.order_by('-date', '-created_at')
+        
+        # 分页
+        page_size = request.GET.get('page_size', 10)
+        try:
+            page_size = int(page_size)
+        except ValueError:
+            page_size = 10
+        
+        paginator = Paginator(records, page_size)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        serializer = ExerciseRecordSerializer(page_obj, many=True)
+        
+        return Response({
+            "records": serializer.data,
+            "pagination": {
+                "current_page": page_obj.number,
+                "total_pages": paginator.num_pages,
+                "total_records": paginator.count,
+                "has_next": page_obj.has_next(),
+                "has_previous": page_obj.has_previous(),
+            }
+        }, status=status.HTTP_200_OK)
+
+class ExerciseRecordCreateView(APIView):
+    def post(self, request):
+        """创建新的运动记录"""
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ExerciseRecordCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            # 保存运动记录，自动关联当前用户
+            exercise_record = serializer.save(user=user)
+            
+            # 返回完整的运动记录信息
+            response_serializer = ExerciseRecordSerializer(exercise_record)
+            return Response({
+                "message": "运动记录创建成功",
+                "record": response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ExerciseRecordDetailView(APIView):
+    def get(self, request, record_id):
+        """获取单个运动记录详情"""
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            user = User.objects.get(id=user_id)
+            record = ExerciseRecord.objects.get(id=record_id, user=user)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=status.HTTP_404_NOT_FOUND)
+        except ExerciseRecord.DoesNotExist:
+            return Response({"error": "运动记录不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ExerciseRecordSerializer(record)
+        return Response({"record": serializer.data}, status=status.HTTP_200_OK)
+    
+    def put(self, request, record_id):
+        """更新运动记录"""
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            user = User.objects.get(id=user_id)
+            record = ExerciseRecord.objects.get(id=record_id, user=user)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=status.HTTP_404_NOT_FOUND)
+        except ExerciseRecord.DoesNotExist:
+            return Response({"error": "运动记录不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ExerciseRecordCreateSerializer(record, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated_record = serializer.save()
+            
+            response_serializer = ExerciseRecordSerializer(updated_record)
+            return Response({
+                "message": "运动记录更新成功",
+                "record": response_serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, record_id):
+        """删除运动记录"""
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            user = User.objects.get(id=user_id)
+            record = ExerciseRecord.objects.get(id=record_id, user=user)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=status.HTTP_404_NOT_FOUND)
+        except ExerciseRecord.DoesNotExist:
+            return Response({"error": "运动记录不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        record.delete()
+        return Response({"message": "运动记录删除成功"}, status=status.HTTP_200_OK)
+
+class ExerciseStatisticsView(APIView):
+    def get(self, request):
+        """获取用户运动统计信息"""
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return Response({"error": "用户未登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 获取查询参数
+        days = request.GET.get('days', 30)
+        try:
+            days = int(days)
+        except ValueError:
+            days = 30
+        
+        # 计算日期范围
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days-1)
+        
+        # 查询运动记录
+        records = ExerciseRecord.objects.filter(
+            user=user,
+            date__gte=start_date,
+            date__lte=end_date
+        ).order_by('-date')
+        
+        if not records:
+            return Response({
+                "statistics": {
+                    "total_records": 0,
+                    "total_duration_minutes": 0,
+                    "total_calories_burned": 0,
+                    "average_duration_minutes": 0,
+                    "average_calories_per_session": 0,
+                    "exercise_type_distribution": {},
+                    "most_frequent_exercise": None,
+                    "date_range": {
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "days": days
+                    }
+                }
+            }, status=status.HTTP_200_OK)
+        
+        # 计算统计信息
+        total_duration = sum(record.duration_minutes for record in records)
+        total_calories = sum(record.calories_burned for record in records)
+        
+        # 运动类型分布
+        exercise_type_stats = {}
+        for record in records:
+            exercise_type = record.get_exercise_type_display()
+            if exercise_type not in exercise_type_stats:
+                exercise_type_stats[exercise_type] = {
+                    'count': 0,
+                    'total_duration': 0,
+                    'total_calories': 0
+                }
+            exercise_type_stats[exercise_type]['count'] += 1
+            exercise_type_stats[exercise_type]['total_duration'] += record.duration_minutes
+            exercise_type_stats[exercise_type]['total_calories'] += record.calories_burned
+        
+        # 最常进行的运动
+        most_frequent_exercise = max(exercise_type_stats.items(), key=lambda x: x[1]['count']) if exercise_type_stats else None
+        
+        return Response({
+            "statistics": {
+                "total_records": len(records),
+                "total_duration_minutes": total_duration,
+                "total_calories_burned": total_calories,
+                "average_duration_minutes": round(total_duration / len(records), 1) if records else 0,
+                "average_calories_per_session": round(total_calories / len(records), 1) if records else 0,
+                "exercise_type_distribution": exercise_type_stats,
+                "most_frequent_exercise": {
+                    "type": most_frequent_exercise[0],
+                    "count": most_frequent_exercise[1]['count']
+                } if most_frequent_exercise else None,
                 "date_range": {
                     "start_date": start_date,
                     "end_date": end_date,

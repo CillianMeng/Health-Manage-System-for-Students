@@ -1,0 +1,215 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}运动记录详情 - 学生健康管理系统{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        运动记录详情
+    </div>
+    <div class="card-body">
+        <div class="detail-row">
+            <strong>记录ID:</strong> {{ record.id }}
+        </div>
+        <div class="detail-row">
+            <strong>用户名:</strong> {{ record.user.userName }}
+        </div>
+        <div class="detail-row">
+            <strong>记录日期:</strong> {{ record.date }}
+        </div>
+        <div class="detail-row">
+            <strong>运动类型:</strong> 
+            <span class="exercise-type-badge">{{ record.get_exercise_type_display }}</span>
+        </div>
+        <div class="detail-row">
+            <strong>运动时长:</strong> 
+            <span style="color: #2980b9; font-weight: bold;">
+                {{ record.duration_minutes }}分钟 ({{ record.duration_hours }}小时)
+            </span>
+        </div>
+        <div class="detail-row">
+            <strong>消耗卡路里:</strong> 
+            <span style="color: #e74c3c; font-weight: bold;">{{ record.calories_burned }}卡</span>
+        </div>
+        <div class="detail-row">
+            <strong>运动强度:</strong>
+            <span class="intensity-badge intensity-{{ record.get_intensity_level }}">
+                {{ record.get_intensity_level }}
+            </span>
+        </div>
+        {% if record.notes %}
+        <div class="detail-row">
+            <strong>备注:</strong> 
+            <div class="notes-content">{{ record.notes }}</div>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+            <strong>记录创建时间:</strong> {{ record.created_at|date:"Y-m-d H:i:s" }}
+        </div>
+        <div class="detail-row">
+            <strong>最后更新时间:</strong> {{ record.updated_at|date:"Y-m-d H:i:s" }}
+        </div>
+        
+        <!-- 运动效果评估 -->
+        <div class="detail-row">
+            <strong>运动效果评估:</strong>
+            {% if record.duration_minutes >= 60 %}
+                <span style="color: #27ae60; font-weight: bold;">优秀 (≥60分钟)</span>
+            {% elif record.duration_minutes >= 30 %}
+                <span style="color: #f39c12; font-weight: bold;">良好 (30-60分钟)</span>
+            {% elif record.duration_minutes >= 15 %}
+                <span style="color: #e67e22; font-weight: bold;">一般 (15-30分钟)</span>
+            {% else %}
+                <span style="color: #e74c3c; font-weight: bold;">偏少 (<15分钟)</span>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'admin_exercise_record_edit' record.id %}" class="btn btn-success">编辑记录</a>
+            <a href="{% url 'admin_exercise_records' %}" class="btn btn-secondary">返回列表</a>
+            <a href="{% url 'admin_user_detail' record.user.id %}" class="btn btn-primary">查看用户详情</a>
+            <button onclick="deleteExerciseRecord({{ record.id }}, '{{ record.user.userName }}', '{{ record.get_exercise_type_display }}', '{{ record.date }}')" 
+                    class="btn btn-danger">删除记录</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.detail-row {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: flex-start;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row strong {
+    min-width: 150px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.exercise-type-badge {
+    background-color: #3498db;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.intensity-badge {
+    padding: 0.3rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: white;
+}
+
+.intensity-高强度 {
+    background-color: #e74c3c;
+}
+
+.intensity-中强度 {
+    background-color: #f39c12;
+}
+
+.intensity-低强度 {
+    background-color: #3498db;
+}
+
+.intensity-轻微活动 {
+    background-color: #95a5a6;
+}
+
+.notes-content {
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 4px;
+    border-left: 4px solid #007bff;
+    margin-top: 0.5rem;
+    white-space: pre-wrap;
+    font-style: italic;
+}
+
+.btn-secondary, .btn-primary, .btn-info {
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-left: 1rem;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteExerciseRecord(recordId, userName, exerciseType, recordDate) {
+    if (confirm('确定要删除用户 "' + userName + '" 在 "' + recordDate + '" 的' + exerciseType + '记录吗？此操作不可撤销。')) {
+        fetch('/user/admin/exercise-records/' + recordId + '/delete/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = '/user/admin/exercise-records/';
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('删除失败: ' + error.message);
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
