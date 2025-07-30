@@ -15,7 +15,7 @@ class LoginSerializer(serializers.Serializer):
         password = data.get('password')
         
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(userName=username)
         except User.DoesNotExist:
             raise serializers.ValidationError("用户名或密码错误")
             
