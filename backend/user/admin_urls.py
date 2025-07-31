@@ -31,4 +31,16 @@ urlpatterns = [
     path('exercise-records/add/', admin_views.ExerciseRecordCreateView.as_view(), name='exercise_record_add'),
     path('exercise-records/<int:pk>/edit/', admin_views.ExerciseRecordUpdateView.as_view(), name='exercise_record_edit'),
     path('exercise-records/<int:pk>/delete/', admin_views.ExerciseRecordDeleteView.as_view(), name='exercise_record_delete'),
+    
+    # 饮食记录管理
+    path('diet-records/', admin_views.DietRecordListView.as_view(), name='diet_record_list'),
+    path('diet-records/add/', admin_views.DietRecordCreateView.as_view(), name='diet_record_add'),
+    path('diet-records/<int:pk>/edit/', admin_views.DietRecordUpdateView.as_view(), name='diet_record_edit'),
+    path('diet-records/<int:pk>/delete/', admin_views.DietRecordDeleteView.as_view(), name='diet_record_delete'),
+    
+    # 食物卡路里参考管理
+    path('food-calories/', admin_views.FoodCalorieReferenceListView.as_view(), name='food_calorie_reference_list'),
+    path('food-calories/add/', admin_views.FoodCalorieReferenceCreateView.as_view(), name='food_calorie_reference_add'),
+    path('food-calories/<int:pk>/edit/', admin_views.FoodCalorieReferenceUpdateView.as_view(), name='food_calorie_reference_edit'),
+    path('food-calories/<int:pk>/delete/', admin_views.FoodCalorieReferenceDeleteView.as_view(), name='food_calorie_reference_delete'),
 ]

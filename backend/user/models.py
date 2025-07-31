@@ -140,3 +140,81 @@ class ExerciseRecord(models.Model):
     
     def __str__(self):
         return f"{self.user.userName} - {self.exercise_date} - {self.get_exercise_type_display()} ({self.duration_minutes}min)"
+
+
+class FoodCalorieReference(models.Model):
+    """食物卡路里参考表"""
+    FOOD_CATEGORIES = [
+        ('staple', '主食'),
+        ('vegetable', '蔬菜'),
+        ('fruit', '水果'),
+        ('meat', '肉类'),
+        ('dairy', '乳制品'),
+        ('beverage', '饮料'),
+        ('snack', '零食'),
+        ('other', '其他'),
+    ]
+    
+    food_name = models.CharField(max_length=50, unique=True, help_text="食物名称")
+    calories_per_100g = models.PositiveIntegerField(help_text="每100g/ml的卡路里含量")
+    food_category = models.CharField(max_length=20, choices=FOOD_CATEGORIES, help_text="食物分类")
+    description = models.TextField(blank=True, help_text="食物描述")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['food_category', 'food_name']
+        verbose_name = "食物卡路里参考"
+        verbose_name_plural = "食物卡路里参考"
+    
+    def __str__(self):
+        return f"{self.food_name} ({self.calories_per_100g}kcal/100g)"
+
+
+class DietRecord(models.Model):
+    """饮食记录模型"""
+    MEAL_TYPES = [
+        ('breakfast', '早餐'),
+        ('lunch', '午餐'),
+        ('dinner', '晚餐'),
+        ('snack', '加餐'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='diet_records')
+    diet_date = models.DateField(help_text="饮食日期")
+    meal_type = models.CharField(max_length=20, choices=MEAL_TYPES, help_text="餐次类型")
+    food_name = models.CharField(max_length=50, help_text="食物名称")
+    portion_size = models.PositiveIntegerField(help_text="食物分量（克或毫升）")
+    calories_per_100g = models.PositiveIntegerField(help_text="每100g/ml卡路里")
+    total_calories = models.PositiveIntegerField(help_text="总卡路里", blank=True, null=True)
+    notes = models.TextField(blank=True, help_text="备注信息")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-diet_date', 'meal_type', '-created_at']
+        verbose_name = "饮食记录"
+        verbose_name_plural = "饮食记录"
+    
+    def save(self, *args, **kwargs):
+        """保存时自动计算总卡路里"""
+        if self.portion_size and self.calories_per_100g:
+            self.total_calories = self._calculate_total_calories()
+        super().save(*args, **kwargs)
+    
+    def _calculate_total_calories(self):
+        """计算总卡路里：分量 × 每100g卡路里 / 100"""
+        return int(self.portion_size * self.calories_per_100g / 100)
+    
+    def get_meal_type_display_order(self):
+        """返回餐次的显示顺序"""
+        meal_order = {
+            'breakfast': 1,
+            'lunch': 2,
+            'dinner': 3,
+            'snack': 4,
+        }
+        return meal_order.get(self.meal_type, 5)
+    
+    def __str__(self):
+        return f"{self.user.userName} - {self.diet_date} - {self.get_meal_type_display()} - {self.food_name} ({self.total_calories}kcal)"

@@ -13,7 +13,11 @@ from .views import (
     WeeklySleepStatsView,
     ExerciseRecordView,
     ExerciseRecordDetailView,
-    WeeklyExerciseStatsView
+    WeeklyExerciseStatsView,
+    DietRecordView,
+    DietRecordDetailView,
+    WeeklyDietStatsView,
+    FoodCalorieReferenceView
 )
 
 urlpatterns = [
@@ -35,4 +39,13 @@ urlpatterns = [
     path('exercise-records/', ExerciseRecordView.as_view(), name='exercise_records'),
     path('exercise-records/<int:record_id>/', ExerciseRecordDetailView.as_view(), name='exercise_record_detail'),
     path('exercise-records/weekly/', WeeklyExerciseStatsView.as_view(), name='weekly_exercise_stats'),
+    
+    # 饮食记录相关路由
+    path('diet-records/', DietRecordView.as_view(), name='diet_records'),
+    path('diet-records/<int:record_id>/', DietRecordDetailView.as_view(), name='diet_record_detail'),
+    path('diet-records/weekly/', WeeklyDietStatsView.as_view(), name='weekly_diet_stats'),
+    
+    # 食物卡路里参考路由
+    path('food-calories/', FoodCalorieReferenceView.as_view(), name='food_calories'),
+    path('food-calories/search/', FoodCalorieReferenceView.as_view(), name='food_calories_search'),
 ]

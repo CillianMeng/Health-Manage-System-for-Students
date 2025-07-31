@@ -3,7 +3,7 @@
 """
 from django import forms
 from django.contrib.auth.hashers import make_password
-from .models import User, SleepRecord, ExerciseRecord
+from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference
 from .utils import set_user_password
 
 
@@ -164,4 +164,131 @@ class AdminExerciseRecordForm(forms.ModelForm):
         calories = self.cleaned_data.get('calories_burned')
         if calories is not None and calories <= 0:
             raise forms.ValidationError('卡路里消耗必须为正数')
+        return calories
+
+
+class AdminDietRecordForm(forms.ModelForm):
+    """管理员饮食记录表单"""
+    
+    class Meta:
+        model = DietRecord
+        fields = ['user', 'diet_date', 'meal_type', 'food_name', 'portion_size', 'calories_per_100g', 'notes']
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'diet_date': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date',
+                'placeholder': '选择饮食日期'
+            }),
+            'meal_type': forms.Select(attrs={'class': 'form-control'}),
+            'food_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '请输入食物名称',
+                'list': 'food-suggestions'
+            }),
+            'portion_size': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '请输入食物分量（克/毫升）',
+                'min': 1,
+                'max': 2000
+            }),
+            'calories_per_100g': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '每100g/ml卡路里',
+                'min': 1,
+                'max': 900
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': '备注信息（可选）'
+            }),
+        }
+        labels = {
+            'user': '用户',
+            'diet_date': '饮食日期',
+            'meal_type': '餐次',
+            'food_name': '食物名称',
+            'portion_size': '食物分量（克/毫升）',
+            'calories_per_100g': '每100g/ml卡路里',
+            'notes': '备注',
+        }
+    
+    def clean_food_name(self):
+        food_name = self.cleaned_data.get('food_name')
+        if food_name:
+            food_name = food_name.strip()
+            if len(food_name) == 0:
+                raise forms.ValidationError('食物名称不能为空')
+            if len(food_name) > 50:
+                raise forms.ValidationError('食物名称不能超过50个字符')
+        return food_name
+    
+    def clean_portion_size(self):
+        portion = self.cleaned_data.get('portion_size')
+        if portion and (portion < 1 or portion > 2000):
+            raise forms.ValidationError('食物分量应在1-2000克/毫升之间')
+        return portion
+    
+    def clean_calories_per_100g(self):
+        calories = self.cleaned_data.get('calories_per_100g')
+        if calories and (calories <= 0 or calories > 900):
+            raise forms.ValidationError('每100g卡路里应在1-900之间')
+        return calories
+
+
+class AdminFoodCalorieReferenceForm(forms.ModelForm):
+    """管理员食物卡路里参考表单"""
+    
+    class Meta:
+        model = FoodCalorieReference
+        fields = ['food_name', 'calories_per_100g', 'food_category', 'description']
+        widgets = {
+            'food_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '请输入食物名称'
+            }),
+            'calories_per_100g': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '每100g/ml卡路里含量',
+                'min': 0,
+                'max': 900
+            }),
+            'food_category': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': '食物描述（可选）'
+            }),
+        }
+        labels = {
+            'food_name': '食物名称',
+            'calories_per_100g': '每100g/ml卡路里',
+            'food_category': '食物分类',
+            'description': '描述',
+        }
+    
+    def clean_food_name(self):
+        food_name = self.cleaned_data.get('food_name')
+        if food_name:
+            food_name = food_name.strip()
+            if len(food_name) == 0:
+                raise forms.ValidationError('食物名称不能为空')
+            if len(food_name) > 50:
+                raise forms.ValidationError('食物名称不能超过50个字符')
+            
+            # 检查名称唯一性
+            existing = FoodCalorieReference.objects.filter(
+                food_name=food_name
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            if existing.exists():
+                raise forms.ValidationError('该食物名称已存在')
+        
+        return food_name
+    
+    def clean_calories_per_100g(self):
+        calories = self.cleaned_data.get('calories_per_100g')
+        if calories is not None and (calories < 0 or calories > 900):
+            raise forms.ValidationError('每100g卡路里应在0-900之间')
         return calories

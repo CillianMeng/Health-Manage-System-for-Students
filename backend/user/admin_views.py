@@ -12,8 +12,8 @@ from django.urls import reverse_lazy
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from datetime import datetime, timedelta
-from .models import User, SleepRecord, ExerciseRecord
-from .forms import AdminUserForm, AdminSleepRecordForm, AdminExerciseRecordForm
+from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference
+from .forms import AdminUserForm, AdminSleepRecordForm, AdminExerciseRecordForm, AdminDietRecordForm, AdminFoodCalorieReferenceForm
 
 
 class AdminRequiredMixin:
@@ -283,4 +283,166 @@ class ExerciseRecordDeleteView(AdminRequiredMixin, DeleteView):
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, '运动记录删除成功')
+        return super().delete(request, *args, **kwargs)
+
+
+class DietRecordListView(AdminRequiredMixin, ListView):
+    """饮食记录列表视图"""
+    model = DietRecord
+    template_name = 'custom_admin/diet_record_list.html'
+    context_object_name = 'diet_records'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        queryset = DietRecord.objects.select_related('user').all()
+        
+        # 用户搜索
+        user_search = self.request.GET.get('user_search')
+        if user_search:
+            queryset = queryset.filter(
+                Q(user__userName__icontains=user_search)
+            )
+        
+        # 日期筛选
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(diet_date__gte=start_date)
+            except ValueError:
+                pass
+        
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(diet_date__lte=end_date)
+            except ValueError:
+                pass
+        
+        # 餐次筛选
+        meal_type = self.request.GET.get('meal_type')
+        if meal_type:
+            queryset = queryset.filter(meal_type=meal_type)
+        
+        # 食物名称搜索
+        food_search = self.request.GET.get('food_search')
+        if food_search:
+            queryset = queryset.filter(food_name__icontains=food_search)
+        
+        return queryset.order_by('-diet_date', 'meal_type', '-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['meal_type_choices'] = DietRecord.MEAL_TYPES
+        context['search_params'] = {
+            'user_search': self.request.GET.get('user_search', ''),
+            'start_date': self.request.GET.get('start_date', ''),
+            'end_date': self.request.GET.get('end_date', ''),
+            'meal_type': self.request.GET.get('meal_type', ''),
+            'food_search': self.request.GET.get('food_search', ''),
+        }
+        return context
+
+
+class DietRecordCreateView(AdminRequiredMixin, CreateView):
+    """饮食记录创建视图"""
+    model = DietRecord
+    form_class = AdminDietRecordForm
+    template_name = 'custom_admin/diet_record_form.html'
+    success_url = reverse_lazy('admin_panel:diet_record_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, '饮食记录创建成功')
+        return super().form_valid(form)
+
+
+class DietRecordUpdateView(AdminRequiredMixin, UpdateView):
+    """饮食记录更新视图"""
+    model = DietRecord
+    form_class = AdminDietRecordForm
+    template_name = 'custom_admin/diet_record_form.html'
+    success_url = reverse_lazy('admin_panel:diet_record_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, '饮食记录更新成功')
+        return super().form_valid(form)
+
+
+class DietRecordDeleteView(AdminRequiredMixin, DeleteView):
+    """饮食记录删除视图"""
+    model = DietRecord
+    template_name = 'custom_admin/diet_record_confirm_delete.html'
+    success_url = reverse_lazy('admin_panel:diet_record_list')
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, '饮食记录删除成功')
+        return super().delete(request, *args, **kwargs)
+
+
+class FoodCalorieReferenceListView(AdminRequiredMixin, ListView):
+    """食物卡路里参考列表视图"""
+    model = FoodCalorieReference
+    template_name = 'custom_admin/food_calorie_reference_list.html'
+    context_object_name = 'food_references'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        queryset = FoodCalorieReference.objects.all()
+        
+        # 食物名称搜索
+        food_search = self.request.GET.get('food_search')
+        if food_search:
+            queryset = queryset.filter(food_name__icontains=food_search)
+        
+        # 食物分类筛选
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(food_category=category)
+        
+        return queryset.order_by('food_category', 'food_name')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category_choices'] = FoodCalorieReference.FOOD_CATEGORIES
+        context['search_params'] = {
+            'food_search': self.request.GET.get('food_search', ''),
+            'category': self.request.GET.get('category', ''),
+        }
+        return context
+
+
+class FoodCalorieReferenceCreateView(AdminRequiredMixin, CreateView):
+    """食物卡路里参考创建视图"""
+    model = FoodCalorieReference
+    form_class = AdminFoodCalorieReferenceForm
+    template_name = 'custom_admin/food_calorie_reference_form.html'
+    success_url = reverse_lazy('admin_panel:food_calorie_reference_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, '食物参考数据创建成功')
+        return super().form_valid(form)
+
+
+class FoodCalorieReferenceUpdateView(AdminRequiredMixin, UpdateView):
+    """食物卡路里参考更新视图"""
+    model = FoodCalorieReference
+    form_class = AdminFoodCalorieReferenceForm
+    template_name = 'custom_admin/food_calorie_reference_form.html'
+    success_url = reverse_lazy('admin_panel:food_calorie_reference_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, '食物参考数据更新成功')
+        return super().form_valid(form)
+
+
+class FoodCalorieReferenceDeleteView(AdminRequiredMixin, DeleteView):
+    """食物卡路里参考删除视图"""
+    model = FoodCalorieReference
+    template_name = 'custom_admin/food_calorie_reference_confirm_delete.html'
+    success_url = reverse_lazy('admin_panel:food_calorie_reference_list')
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, '食物参考数据删除成功')
         return super().delete(request, *args, **kwargs)

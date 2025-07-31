@@ -7,8 +7,8 @@ from django.utils import timezone
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer, ExerciseRecordSerializer, WeeklyExerciseStatsSerializer
-from .models import User, SleepRecord, ExerciseRecord
+from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer, ExerciseRecordSerializer, WeeklyExerciseStatsSerializer, DietRecordSerializer, WeeklyDietStatsSerializer, FoodCalorieReferenceSerializer
+from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference
 from .utils import (
     set_user_password, 
     create_user_session, 
@@ -737,3 +737,362 @@ class WeeklyExerciseStatsView(APIView):
             recommendations.append("您的运动表现很出色，继续保持健康的生活方式")
         
         return recommendations if recommendations else ["您的运动状况良好，继续保持"]
+
+
+class FoodCalorieReferenceView(APIView):
+    """食物卡路里参考API"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取食物卡路里参考列表"""
+        try:
+            # 获取查询参数
+            search_query = request.GET.get('q', '').strip()  # 搜索关键词
+            category = request.GET.get('category', '').strip()  # 食物分类
+            
+            # 构建查询条件
+            queryset = FoodCalorieReference.objects.all()
+            
+            # 按分类筛选
+            if category:
+                queryset = queryset.filter(food_category=category)
+            
+            # 按关键词搜索
+            if search_query:
+                queryset = queryset.filter(food_name__icontains=search_query)
+            
+            # 限制返回数量（避免数据过多）
+            queryset = queryset[:100]
+            
+            serializer = FoodCalorieReferenceSerializer(queryset, many=True)
+            
+            return Response({
+                "foods": serializer.data,
+                "total_count": queryset.count(),
+                "search_query": search_query,
+                "category": category
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"获取食物参考数据失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DietRecordView(APIView):
+    """饮食记录API"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户饮食记录列表"""
+        try:
+            user = request.user
+            
+            # 获取查询参数
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            meal_type = request.GET.get('meal_type')
+            
+            # 构建查询条件
+            queryset = DietRecord.objects.filter(user=user)
+            
+            # 日期范围筛选
+            if start_date:
+                try:
+                    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                    queryset = queryset.filter(diet_date__gte=start_date)
+                except ValueError:
+                    return Response(
+                        {"error": "开始日期格式错误，请使用 YYYY-MM-DD 格式"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            if end_date:
+                try:
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                    queryset = queryset.filter(diet_date__lte=end_date)
+                except ValueError:
+                    return Response(
+                        {"error": "结束日期格式错误，请使用 YYYY-MM-DD 格式"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # 餐次筛选
+            if meal_type:
+                queryset = queryset.filter(meal_type=meal_type)
+            
+            # 按日期和餐次排序
+            queryset = queryset.order_by('-diet_date', 'meal_type', '-created_at')
+            
+            # 限制返回数量（分页可以后续添加）
+            queryset = queryset[:100]
+            
+            serializer = DietRecordSerializer(queryset, many=True)
+            
+            return Response({
+                "records": serializer.data,
+                "total_count": queryset.count()
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"获取饮食记录失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def post(self, request):
+        """创建新的饮食记录"""
+        try:
+            user = request.user
+            
+            # 添加用户信息到数据中
+            data = request.data.copy()
+            
+            serializer = DietRecordSerializer(data=data)
+            if serializer.is_valid():
+                # 保存记录，关联当前用户
+                diet_record = serializer.save(user=user)
+                
+                # 返回创建的记录
+                response_serializer = DietRecordSerializer(diet_record)
+                return Response({
+                    "message": "饮食记录创建成功",
+                    "record": response_serializer.data
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response(
+                {"error": f"创建饮食记录失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DietRecordDetailView(APIView):
+    """饮食记录详情API"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get_object(self, user, record_id):
+        """获取指定用户的饮食记录"""
+        try:
+            return DietRecord.objects.get(id=record_id, user=user)
+        except DietRecord.DoesNotExist:
+            return None
+    
+    def get(self, request, record_id):
+        """获取特定饮食记录详情"""
+        try:
+            user = request.user
+            record = self.get_object(user, record_id)
+            
+            if not record:
+                return Response(
+                    {"error": "饮食记录不存在"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            serializer = DietRecordSerializer(record)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"获取饮食记录失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def put(self, request, record_id):
+        """更新饮食记录"""
+        try:
+            user = request.user
+            record = self.get_object(user, record_id)
+            
+            if not record:
+                return Response(
+                    {"error": "饮食记录不存在"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            serializer = DietRecordSerializer(record, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_record = serializer.save()
+                
+                response_serializer = DietRecordSerializer(updated_record)
+                return Response({
+                    "message": "饮食记录更新成功",
+                    "record": response_serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response(
+                {"error": f"更新饮食记录失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def delete(self, request, record_id):
+        """删除饮食记录"""
+        try:
+            user = request.user
+            record = self.get_object(user, record_id)
+            
+            if not record:
+                return Response(
+                    {"error": "饮食记录不存在"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            record.delete()
+            return Response(
+                {"message": "饮食记录删除成功"}, 
+                status=status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"删除饮食记录失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class WeeklyDietStatsView(APIView):
+    """一周饮食统计API"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户最近一周的饮食统计数据"""
+        try:
+            user = request.user
+            
+            # 计算最近一周的日期范围
+            end_date = date.today()
+            start_date = end_date - timedelta(days=6)  # 包括今天在内的7天
+            
+            # 获取一周内的饮食记录
+            records = DietRecord.objects.filter(
+                user=user,
+                diet_date__range=[start_date, end_date]
+            ).order_by('diet_date', 'meal_type', 'created_at')
+            
+            # 计算统计数据
+            stats_data = self._calculate_diet_stats(records, start_date, end_date)
+            
+            # 序列化记录数据
+            records_serializer = DietRecordSerializer(records, many=True)
+            stats_data['records'] = records_serializer.data
+            
+            # 直接返回统计数据，不使用序列化器验证
+            return Response(stats_data, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            return Response(
+                {"error": f"获取一周饮食统计失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def _calculate_diet_stats(self, records, start_date, end_date):
+        """计算饮食统计数据"""
+        # 基础统计
+        total_calories = sum(record.total_calories or 0 for record in records)
+        total_days = (end_date - start_date).days + 1
+        average_daily_calories = total_calories / total_days if total_days > 0 else 0
+        
+        # 餐次分布统计
+        meal_distribution = {
+            'breakfast': 0,
+            'lunch': 0,
+            'dinner': 0,
+            'snack': 0
+        }
+        
+        for record in records:
+            if record.total_calories:
+                meal_distribution[record.meal_type] += record.total_calories
+        
+        # 食物多样性评分（基于不同食物种类数量）
+        unique_foods = set(record.food_name for record in records)
+        food_variety_score = min(len(unique_foods) * 5, 100)  # 每种食物5分，最高100分
+        
+        # 营养均衡评分（基于餐次分布）
+        nutrition_balance_score = self._calculate_nutrition_balance_score(meal_distribution, total_calories)
+        
+        # 每日推荐摄入量和达成率
+        daily_calories_target = 2000  # 成年人建议每日摄入2000kcal
+        target_achievement_rate = (average_daily_calories / daily_calories_target * 100) if daily_calories_target > 0 else 0
+        
+        # 生成建议
+        recommendations = self._generate_diet_recommendations(
+            average_daily_calories, meal_distribution, food_variety_score, 
+            nutrition_balance_score, target_achievement_rate
+        )
+        
+        return {
+            'total_calories': total_calories,
+            'average_daily_calories': round(average_daily_calories, 1),
+            'meal_distribution': meal_distribution,
+            'food_variety_score': food_variety_score,
+            'nutrition_balance_score': nutrition_balance_score,
+            'daily_calories_target': daily_calories_target,
+            'target_achievement_rate': round(target_achievement_rate, 1),
+            'recommendations': recommendations
+        }
+    
+    def _calculate_nutrition_balance_score(self, meal_distribution, total_calories):
+        """计算营养均衡评分"""
+        if total_calories == 0:
+            return 0
+        
+        # 理想餐次分配比例：早餐25%，午餐35%，晚餐30%，加餐10%
+        ideal_ratios = {
+            'breakfast': 0.25,
+            'lunch': 0.35,
+            'dinner': 0.30,
+            'snack': 0.10
+        }
+        
+        score = 100
+        for meal_type, ideal_ratio in ideal_ratios.items():
+            actual_ratio = meal_distribution[meal_type] / total_calories if total_calories > 0 else 0
+            # 计算与理想比例的偏差，偏差越大扣分越多
+            deviation = abs(actual_ratio - ideal_ratio)
+            score -= deviation * 200  # 每1%偏差扣2分
+        
+        return max(int(score), 0)
+    
+    def _generate_diet_recommendations(self, avg_calories, meal_dist, variety_score, balance_score, achievement_rate):
+        """生成饮食建议"""
+        recommendations = []
+        
+        # 基于卡路里摄入的建议
+        if avg_calories < 1200:
+            recommendations.append("您的每日卡路里摄入偏低，建议增加营养丰富的食物")
+        elif avg_calories > 2500:
+            recommendations.append("您的每日卡路里摄入偏高，建议适当控制饮食量")
+        elif 1800 <= avg_calories <= 2200:
+            recommendations.append("您的卡路里摄入量适中，继续保持均衡饮食")
+        
+        # 基于食物多样性的建议
+        if variety_score < 30:
+            recommendations.append("建议增加食物种类，丰富营养来源")
+        elif variety_score >= 70:
+            recommendations.append("您的饮食种类很丰富，营养均衡")
+        
+        # 基于营养均衡的建议
+        if balance_score < 50:
+            recommendations.append("建议调整三餐比例，早中晚餐合理分配")
+        elif balance_score >= 80:
+            recommendations.append("您的餐次分配很合理，营养摄入均衡")
+        
+        # 基于目标达成率的建议
+        if achievement_rate < 80:
+            recommendations.append("建议适当增加营养密度高的食物摄入")
+        elif achievement_rate > 120:
+            recommendations.append("注意控制食物分量，避免过量摄入")
+        
+        return recommendations if recommendations else ["您的饮食状况良好，继续保持健康的饮食习惯"]
