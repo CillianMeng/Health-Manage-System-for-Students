@@ -7,7 +7,10 @@ from .views import (
     UserProfileView,
     UserSessionsView,
     DebugSessionView,
-    CSRFTokenView
+    CSRFTokenView,
+    SleepRecordView,
+    SleepRecordDetailView,
+    WeeklySleepStatsView
 )
 
 urlpatterns = [
@@ -19,4 +22,9 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user_profile'),
     path('sessions/', UserSessionsView.as_view(), name='user_sessions'),
     path('debug-session/', DebugSessionView.as_view(), name='debug_session'),
+    
+    # 睡眠记录相关路由
+    path('sleep-records/', SleepRecordView.as_view(), name='sleep_records'),
+    path('sleep-records/<int:pk>/', SleepRecordDetailView.as_view(), name='sleep_record_detail'),
+    path('sleep-records/weekly/', WeeklySleepStatsView.as_view(), name='weekly_sleep_stats'),
 ]

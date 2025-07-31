@@ -1,0 +1,125 @@
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}仪表板 - 后台管理系统{% endblock %}
+
+{% block page_title %}系统概览{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            用户总数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ user_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            睡眠记录总数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ sleep_record_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-bed fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            今日记录
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_records }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            本周记录
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ week_records }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'admin_panel:user_add' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-plus text-success me-2"></i>
+                        添加新用户
+                    </a>
+                    <a href="{% url 'admin_panel:sleep_record_add' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus text-info me-2"></i>
+                        添加睡眠记录
+                    </a>
+                    <a href="{% url 'admin_panel:user_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-list text-primary me-2"></i>
+                        查看所有用户
+                    </a>
+                    <a href="{% url 'admin_panel:sleep_record_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-bed text-warning me-2"></i>
+                        查看睡眠记录
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">系统信息</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>环境：</strong> 本地开发环境</p>
+                <p><strong>版本：</strong> v1.0.0</p>
+                <p><strong>状态：</strong> <span class="badge bg-success">运行正常</span></p>
+                <p><strong>说明：</strong> 学生健康管理系统后台管理面板</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

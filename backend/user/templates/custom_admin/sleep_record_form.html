@@ -1,0 +1,129 @@
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}
+    {% if object %}编辑睡眠记录{% else %}添加睡眠记录{% endif %} - 后台管理系统
+{% endblock %}
+
+{% block page_title %}
+    {% if object %}编辑睡眠记录{% else %}添加睡眠记录{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    {% if object %}编辑睡眠记录{% else %}添加新睡眠记录{% endif %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.user.id_for_label }}" class="form-label">用户 *</label>
+                            {{ form.user }}
+                            {% if form.user.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.user.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.sleep_date.id_for_label }}" class="form-label">睡眠日期 *</label>
+                            {{ form.sleep_date }}
+                            {% if form.sleep_date.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.sleep_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.bedtime.id_for_label }}" class="form-label">睡眠时间 *</label>
+                            {{ form.bedtime }}
+                            {% if form.bedtime.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.bedtime.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.wake_time.id_for_label }}" class="form-label">起床时间 *</label>
+                            {{ form.wake_time }}
+                            {% if form.wake_time.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.wake_time.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.sleep_quality.id_for_label }}" class="form-label">睡眠质量</label>
+                            {{ form.sleep_quality }}
+                            {% if form.sleep_quality.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.sleep_quality.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">1=很差, 2=较差, 3=一般, 4=良好, 5=很好</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.sleep_duration.id_for_label }}" class="form-label">睡眠时长 (小时)</label>
+                            {{ form.sleep_duration }}
+                            {% if form.sleep_duration.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.sleep_duration.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">备注</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.notes.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'admin_panel:sleep_record_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>返回列表
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            {% if object %}更新记录{% else %}创建记录{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

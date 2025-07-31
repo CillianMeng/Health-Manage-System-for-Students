@@ -48,22 +48,60 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # 重新启用CSRF
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'user.middleware.SessionAuthMiddleware',  # 自定义session认证中间件
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = '学生健康管理系统.urls'
 
+# CORS配置 - 开发环境设置
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173",      # Vite开发服务器
+    "http://127.0.0.1:5173",      # Vite开发服务器（备用）
+    "http://localhost:5174",      # Vite开发服务器（另一个端口）
+    "http://127.0.0.1:5174",      # Vite开发服务器（另一个端口备用）
+    "http://localhost:8080",      # Python http.server
+    "http://127.0.0.1:8080",      # Python http.server（备用）
+    "http://localhost:3000",      # Node.js服务器
+    "http://127.0.0.1:3000",      # Node.js服务器（备用）
+    "http://127.0.0.1:5500",      # VS Code Live Server默认端口
+    "http://localhost:5500",      # VS Code Live Server
 ]
+
+# 开发环境允许所有来源（生产环境请移除）
+CORS_ALLOW_ALL_ORIGINS = True  # 仅开发环境使用
+
+# CORS设置 - 允许发送cookies
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF设置 - 开发环境临时禁用CSRF（生产环境不要这样做）
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+]
+
+# CSRF Cookie设置
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_COOKIE_SECURE = False  # 开发环境设为False
+CSRF_COOKIE_HTTPONLY = False  # 允许JavaScript访问CSRF token
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_USE_SESSIONS = False
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # 添加模板目录
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,3 +167,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Session配置
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # 使用数据库存储session
+SESSION_COOKIE_AGE = 86400  # session过期时间（秒），这里设置为24小时
+SESSION_COOKIE_NAME = 'sessionid'  # 使用Django默认的session cookie名称
+SESSION_COOKIE_HTTPONLY = False  # 暂时设为False以便调试
+SESSION_COOKIE_SECURE = False  # 开发环境设为False，生产环境应设为True
+SESSION_COOKIE_SAMESITE = None  # 暂时设为None以便跨域
+SESSION_COOKIE_DOMAIN = None  # 不设置域名限制
+SESSION_SAVE_EVERY_REQUEST = True  # 每次请求都保存session
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # 浏览器关闭时不清除session
