@@ -21,9 +21,37 @@ from .utils import (
 from .token_auth import TokenAuthService
 from datetime import datetime, date, timedelta
 from django.db.models import Avg, Count
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.authentication import BaseAuthentication
 from django.contrib.auth.models import AnonymousUser
+
+
+class TokenAuthentication(BaseAuthentication):
+    """
+    自定义Token认证类，用于API认证
+    """
+    def authenticate(self, request):
+        auth_header = request.META.get('HTTP_AUTHORIZATION')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return None
+        
+        token = auth_header.split(' ')[1]
+        user = TokenAuthService.verify_token(token)
+        
+        if user:
+            return (user, token)
+        
+        return None
+
+
+class IsTokenAuthenticated(BasePermission):
+    """
+    自定义权限类，确保用户通过Token认证
+    """
+    def has_permission(self, request, view):
+        return bool(request.user and not isinstance(request.user, AnonymousUser))
+
+
 # Create your views here.
 
 class LoginView(APIView):
@@ -194,45 +222,16 @@ class CSRFTokenView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class TokenAuthentication(BaseAuthentication):
-    """
-    自定义Token认证类，用于睡眠记录API
-    """
-    def authenticate(self, request):
-        auth_header = request.META.get('HTTP_AUTHORIZATION')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return None
-        
-        token = auth_header.split(' ')[1]
-        user_info = TokenAuthService.verify_token(token)
-        
-        if user_info:
-            try:
-                user = User.objects.get(id=user_info['user_id'])
-                return (user, token)
-            except User.DoesNotExist:
-                return None
-        
-        return None
-
-
 class SleepRecordView(APIView):
     """
     睡眠记录管理视图
     """
     authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
     
     def get(self, request):
         """获取用户的睡眠记录"""
-        # 手动检查认证
-        auth_result = self.authentication_classes[0]().authenticate(request)
-        if not auth_result:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        user, token = auth_result
+        user = request.user
         
         # 获取查询参数
         start_date = request.query_params.get('start_date')
@@ -271,15 +270,7 @@ class SleepRecordView(APIView):
     
     def post(self, request):
         """创建或更新睡眠记录"""
-        # 手动检查认证  
-        auth_result = self.authentication_classes[0]().authenticate(request)
-        if not auth_result:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        user, token = auth_result
+        user = request.user
         
         data = request.data.copy()
         
@@ -316,6 +307,7 @@ class SleepRecordDetailView(APIView):
     单个睡眠记录的详情、更新、删除视图
     """
     authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
     
     def get_object(self, pk, user):
         """获取睡眠记录对象"""
@@ -326,15 +318,7 @@ class SleepRecordDetailView(APIView):
     
     def get(self, request, pk):
         """获取单个睡眠记录"""
-        # 手动检查认证
-        auth_result = self.authentication_classes[0]().authenticate(request)
-        if not auth_result:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        user, token = auth_result
+        user = request.user
         
         record = self.get_object(pk, user)
         if not record:
@@ -348,15 +332,7 @@ class SleepRecordDetailView(APIView):
     
     def put(self, request, pk):
         """更新睡眠记录"""
-        # 手动检查认证
-        auth_result = self.authentication_classes[0]().authenticate(request)
-        if not auth_result:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        user, token = auth_result
+        user = request.user
         
         record = self.get_object(pk, user)
         if not record:
@@ -377,15 +353,7 @@ class SleepRecordDetailView(APIView):
     
     def delete(self, request, pk):
         """删除睡眠记录"""
-        # 手动检查认证
-        auth_result = self.authentication_classes[0]().authenticate(request)
-        if not auth_result:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        user, token = auth_result
+        user = request.user
         
         record = self.get_object(pk, user)
         if not record:
@@ -395,9 +363,8 @@ class SleepRecordDetailView(APIView):
             )
         
         record.delete()
-        return Response({
-            "message": "睡眠记录删除成功"
-        }, status=status.HTTP_204_NO_CONTENT)
+        # HTTP 204 不应该有响应体
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class WeeklySleepStatsView(APIView):
@@ -405,18 +372,11 @@ class WeeklySleepStatsView(APIView):
     一周睡眠统计视图
     """
     authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
     
     def get(self, request):
         """获取最近一周的睡眠统计"""
-        # 手动检查认证
-        auth_result = self.authentication_classes[0]().authenticate(request)
-        if not auth_result:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        user, token = auth_result
+        user = request.user
         
         # 计算一周前的日期
         end_date = date.today()
