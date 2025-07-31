@@ -25,6 +25,12 @@
                 <span class="nav-text">睡眠记录</span>
               </a>
             </li>
+            <li class="nav-item" :class="{ active: currentView === 'exercise' }">
+              <a href="#" @click.prevent="setCurrentView('exercise')" class="nav-link">
+                <span class="nav-icon">🏃‍♂️</span>
+                <span class="nav-text">运动记录</span>
+              </a>
+            </li>
             <li class="nav-item">
               <a href="#" class="nav-link">
                 <span class="nav-icon">🏥</span>
@@ -153,6 +159,11 @@
         <div v-else-if="currentView === 'sleep'">
           <SleepRecords />
         </div>
+
+        <!-- 运动记录视图 -->
+        <div v-else-if="currentView === 'exercise'">
+          <ExerciseRecords />
+        </div>
       </div>
     </main>
   </div>
@@ -161,6 +172,7 @@
 <script setup>
 import { ref } from 'vue';
 import SleepRecords from './SleepRecords.vue';
+import ExerciseRecords from './ExerciseRecords.vue';
 
 const props = defineProps({
   currentUser: {
@@ -183,7 +195,8 @@ const setCurrentView = (view) => {
 const getPageTitle = () => {
   const titles = {
     overview: '数据总览',
-    sleep: '睡眠记录'
+    sleep: '睡眠记录',
+    exercise: '运动记录'
   };
   return titles[currentView.value] || '数据总览';
 };
