@@ -43,6 +43,24 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            运动记录总数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ exercise_record_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-running fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-info shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
@@ -50,7 +68,9 @@
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                             今日记录
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_records }}</div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            睡眠: {{ today_records }} | 运动: {{ today_exercise_records }}
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
@@ -68,7 +88,9 @@
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             本周记录
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ week_records }}</div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            睡眠: {{ week_records }} | 运动: {{ week_exercise_records }}
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
@@ -95,6 +117,10 @@
                         <i class="fas fa-plus text-info me-2"></i>
                         添加睡眠记录
                     </a>
+                    <a href="{% url 'admin_panel:exercise_record_add' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus text-danger me-2"></i>
+                        添加运动记录
+                    </a>
                     <a href="{% url 'admin_panel:user_list' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-list text-primary me-2"></i>
                         查看所有用户
@@ -102,6 +128,10 @@
                     <a href="{% url 'admin_panel:sleep_record_list' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-bed text-warning me-2"></i>
                         查看睡眠记录
+                    </a>
+                    <a href="{% url 'admin_panel:exercise_record_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-running text-success me-2"></i>
+                        查看运动记录
                     </a>
                 </div>
             </div>

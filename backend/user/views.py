@@ -7,8 +7,8 @@ from django.utils import timezone
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer
-from .models import User, SleepRecord
+from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer, ExerciseRecordSerializer, WeeklyExerciseStatsSerializer
+from .models import User, SleepRecord, ExerciseRecord
 from .utils import (
     set_user_password, 
     create_user_session, 
@@ -474,3 +474,266 @@ class WeeklySleepStatsView(APIView):
             recommendations.append("建议坚持记录睡眠数据，以便更好地分析睡眠模式")
         
         return recommendations if recommendations else ["您的睡眠状况良好，继续保持"]
+
+
+class ExerciseRecordView(APIView):
+    """
+    运动记录视图
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户的运动记录"""
+        user = request.user
+        
+        # 获取查询参数
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        exercise_type = request.GET.get('exercise_type')
+        
+        # 构建查询条件
+        queryset = ExerciseRecord.objects.filter(user=user)
+        
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(exercise_date__gte=start_date)
+            except ValueError:
+                return Response(
+                    {'error': '开始日期格式错误，请使用YYYY-MM-DD格式'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(exercise_date__lte=end_date)
+            except ValueError:
+                return Response(
+                    {'error': '结束日期格式错误，请使用YYYY-MM-DD格式'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        if exercise_type:
+            queryset = queryset.filter(exercise_type=exercise_type)
+        
+        # 按日期倒序排列
+        records = queryset.order_by('-exercise_date', '-created_at')
+        
+        # 序列化数据
+        serializer = ExerciseRecordSerializer(records, many=True)
+        
+        return Response({
+            'records': serializer.data,
+            'total_count': records.count()
+        }, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """创建运动记录"""
+        user = request.user
+        
+        # 准备数据，添加用户信息
+        data = request.data.copy()
+        
+        # 创建序列化器实例
+        serializer = ExerciseRecordSerializer(data=data)
+        
+        if serializer.is_valid():
+            # 保存记录，关联到当前用户
+            exercise_record = serializer.save(user=user)
+            
+            # 返回创建的记录
+            response_serializer = ExerciseRecordSerializer(exercise_record)
+            return Response({
+                'message': '运动记录创建成功',
+                'record': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'error': '数据验证失败',
+            'details': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExerciseRecordDetailView(APIView):
+    """
+    运动记录详情视图（更新和删除）
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get_object(self, user, record_id):
+        """获取指定的运动记录"""
+        try:
+            return ExerciseRecord.objects.get(id=record_id, user=user)
+        except ExerciseRecord.DoesNotExist:
+            return None
+    
+    def put(self, request, record_id):
+        """更新运动记录"""
+        user = request.user
+        exercise_record = self.get_object(user, record_id)
+        
+        if not exercise_record:
+            return Response({
+                'error': '运动记录不存在或无权访问'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # 更新记录
+        serializer = ExerciseRecordSerializer(exercise_record, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            updated_record = serializer.save()
+            
+            # 返回更新后的记录
+            response_serializer = ExerciseRecordSerializer(updated_record)
+            return Response({
+                'message': '运动记录更新成功',
+                'record': response_serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'error': '数据验证失败',
+            'details': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, record_id):
+        """删除运动记录"""
+        user = request.user
+        exercise_record = self.get_object(user, record_id)
+        
+        if not exercise_record:
+            return Response({
+                'error': '运动记录不存在或无权访问'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # 删除记录
+        exercise_record.delete()
+        
+        return Response({
+            'message': '运动记录删除成功'
+        }, status=status.HTTP_200_OK)
+
+
+class WeeklyExerciseStatsView(APIView):
+    """
+    一周运动统计视图
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取最近一周的运动统计"""
+        user = request.user
+        
+        # 计算一周前的日期
+        end_date = date.today()
+        start_date = end_date - timedelta(days=6)  # 包含今天共7天
+        
+        # 获取一周内的运动记录
+        records = ExerciseRecord.objects.filter(
+            user=user,
+            exercise_date__gte=start_date,
+            exercise_date__lte=end_date
+        ).order_by('exercise_date')
+        
+        # 计算统计数据
+        if records.exists():
+            total_duration = sum(record.duration_minutes for record in records)
+            total_calories = sum(record.calories_burned or 0 for record in records)
+            
+            # 计算平均值
+            avg_daily_duration = total_duration / 7  # 按7天计算平均值
+            avg_daily_calories = total_calories / 7
+            
+            # 统计最常做的运动
+            exercise_counts = {}
+            for record in records:
+                exercise_type = record.get_exercise_type_display()
+                exercise_counts[exercise_type] = exercise_counts.get(exercise_type, 0) + 1
+            
+            most_frequent = max(exercise_counts.items(), key=lambda x: x[1])[0] if exercise_counts else "无"
+            
+            # 计算健身评分
+            fitness_score = self._calculate_fitness_score(total_duration, total_calories, len(records))
+            
+            # 生成建议
+            recommendations = self._generate_exercise_recommendations(
+                total_duration, total_calories, len(records), fitness_score
+            )
+        else:
+            total_duration = 0
+            total_calories = 0
+            avg_daily_duration = 0
+            avg_daily_calories = 0
+            most_frequent = "无"
+            fitness_score = 0
+            recommendations = ["开始记录您的运动数据，保持健康的生活方式"]
+        
+        # 构建响应数据
+        stats_data = {
+            'records': ExerciseRecordSerializer(records, many=True).data,
+            'total_duration_minutes': total_duration,
+            'total_duration_hours': round(total_duration / 60, 1),
+            'total_calories_burned': total_calories,
+            'average_daily_duration': round(avg_daily_duration, 1),
+            'average_daily_calories': round(avg_daily_calories, 1),
+            'most_frequent_exercise': most_frequent,
+            'exercise_frequency': records.count(),
+            'fitness_score': fitness_score,
+            'recommendations': recommendations
+        }
+        
+        return Response(stats_data, status=status.HTTP_200_OK)
+    
+    def _calculate_fitness_score(self, total_duration, total_calories, frequency):
+        """计算健身评分（0-100分）"""
+        score = 0
+        
+        # 基于总运动时长评分（最多40分）
+        if total_duration >= 150:  # WHO推荐每周150分钟
+            score += 40
+        else:
+            score += (total_duration / 150) * 40
+        
+        # 基于运动频率评分（最多30分）
+        if frequency >= 3:  # 建议每周至少3次
+            score += 30
+        else:
+            score += (frequency / 3) * 30
+        
+        # 基于卡路里消耗评分（最多30分）
+        target_calories = 500  # 每周目标消耗500卡路里
+        if total_calories >= target_calories:
+            score += 30
+        else:
+            score += (total_calories / target_calories) * 30
+        
+        return min(int(score), 100)
+    
+    def _generate_exercise_recommendations(self, total_duration, total_calories, frequency, score):
+        """生成运动建议"""
+        recommendations = []
+        
+        # 基于运动时长的建议
+        if total_duration < 75:
+            recommendations.append("建议增加运动时间，每周至少150分钟的中等强度运动")
+        elif total_duration >= 300:
+            recommendations.append("您的运动量很充足，注意适当休息和恢复")
+        elif 150 <= total_duration < 300:
+            recommendations.append("运动量达标，继续保持这个良好的习惯")
+        
+        # 基于运动频率的建议
+        if frequency < 3:
+            recommendations.append("建议增加运动频率，每周至少运动3次")
+        elif frequency >= 5:
+            recommendations.append("运动频率很好，记得安排充分的休息时间")
+        
+        # 基于健身评分的建议
+        if score < 50:
+            recommendations.append("您的整体运动水平有待提升，建议制定合理的运动计划")
+        elif score >= 80:
+            recommendations.append("您的运动表现很出色，继续保持健康的生活方式")
+        
+        return recommendations if recommendations else ["您的运动状况良好，继续保持"]

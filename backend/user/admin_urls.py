@@ -25,4 +25,10 @@ urlpatterns = [
     path('sleep-records/add/', admin_views.SleepRecordCreateView.as_view(), name='sleep_record_add'),
     path('sleep-records/<int:pk>/edit/', admin_views.SleepRecordUpdateView.as_view(), name='sleep_record_edit'),
     path('sleep-records/<int:pk>/delete/', admin_views.SleepRecordDeleteView.as_view(), name='sleep_record_delete'),
+    
+    # 运动记录管理
+    path('exercise-records/', admin_views.ExerciseRecordListView.as_view(), name='exercise_record_list'),
+    path('exercise-records/add/', admin_views.ExerciseRecordCreateView.as_view(), name='exercise_record_add'),
+    path('exercise-records/<int:pk>/edit/', admin_views.ExerciseRecordUpdateView.as_view(), name='exercise_record_edit'),
+    path('exercise-records/<int:pk>/delete/', admin_views.ExerciseRecordDeleteView.as_view(), name='exercise_record_delete'),
 ]

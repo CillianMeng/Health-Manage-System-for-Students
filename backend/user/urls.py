@@ -10,7 +10,10 @@ from .views import (
     CSRFTokenView,
     SleepRecordView,
     SleepRecordDetailView,
-    WeeklySleepStatsView
+    WeeklySleepStatsView,
+    ExerciseRecordView,
+    ExerciseRecordDetailView,
+    WeeklyExerciseStatsView
 )
 
 urlpatterns = [
@@ -27,4 +30,9 @@ urlpatterns = [
     path('sleep-records/', SleepRecordView.as_view(), name='sleep_records'),
     path('sleep-records/<int:pk>/', SleepRecordDetailView.as_view(), name='sleep_record_detail'),
     path('sleep-records/weekly/', WeeklySleepStatsView.as_view(), name='weekly_sleep_stats'),
+    
+    # 运动记录相关路由
+    path('exercise-records/', ExerciseRecordView.as_view(), name='exercise_records'),
+    path('exercise-records/<int:record_id>/', ExerciseRecordDetailView.as_view(), name='exercise_record_detail'),
+    path('exercise-records/weekly/', WeeklyExerciseStatsView.as_view(), name='weekly_exercise_stats'),
 ]

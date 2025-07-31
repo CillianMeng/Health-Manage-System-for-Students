@@ -3,7 +3,7 @@
 """
 from django import forms
 from django.contrib.auth.hashers import make_password
-from .models import User, SleepRecord
+from .models import User, SleepRecord, ExerciseRecord
 from .utils import set_user_password
 
 
@@ -112,3 +112,56 @@ class AdminSleepRecordForm(forms.ModelForm):
                 raise forms.ValidationError('该用户在此日期已有睡眠记录')
         
         return cleaned_data
+
+
+class AdminExerciseRecordForm(forms.ModelForm):
+    """管理员运动记录表单"""
+    
+    class Meta:
+        model = ExerciseRecord
+        fields = ['user', 'exercise_date', 'exercise_type', 'duration_minutes', 'calories_burned', 'notes']
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'exercise_date': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date',
+                'placeholder': '选择运动日期'
+            }),
+            'exercise_type': forms.Select(attrs={'class': 'form-control'}),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '请输入运动时长（分钟）',
+                'min': 1,
+                'max': 480
+            }),
+            'calories_burned': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '卡路里消耗（可选，留空自动计算）',
+                'min': 1
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': '备注信息（可选）'
+            }),
+        }
+        labels = {
+            'user': '用户',
+            'exercise_date': '运动日期',
+            'exercise_type': '运动类型',
+            'duration_minutes': '运动时长（分钟）',
+            'calories_burned': '消耗卡路里',
+            'notes': '备注',
+        }
+    
+    def clean_duration_minutes(self):
+        duration = self.cleaned_data.get('duration_minutes')
+        if duration and (duration < 5 or duration > 480):
+            raise forms.ValidationError('运动时长应在5-480分钟之间')
+        return duration
+    
+    def clean_calories_burned(self):
+        calories = self.cleaned_data.get('calories_burned')
+        if calories is not None and calories <= 0:
+            raise forms.ValidationError('卡路里消耗必须为正数')
+        return calories

@@ -1,4 +1,4 @@
-from .models import User, SleepRecord
+from .models import User, SleepRecord, ExerciseRecord
 from rest_framework import serializers
 from .utils import verify_user_password
 from datetime import datetime, date
@@ -88,4 +88,62 @@ class WeeklySleepStatsSerializer(serializers.Serializer):
     average_quality_score = serializers.FloatField(read_only=True)
     total_records = serializers.IntegerField(read_only=True)
     sleep_regularity = serializers.CharField(read_only=True)
+    recommendations = serializers.ListField(read_only=True)
+
+
+class ExerciseRecordSerializer(serializers.ModelSerializer):
+    exercise_type_display = serializers.SerializerMethodField(read_only=True)
+    exercise_intensity = serializers.SerializerMethodField(read_only=True)
+    duration_hours = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = ExerciseRecord
+        fields = [
+            'id', 'exercise_date', 'exercise_type', 'exercise_type_display',
+            'duration_minutes', 'duration_hours', 'calories_burned', 
+            'exercise_intensity', 'notes', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_exercise_type_display(self, obj):
+        return obj.get_exercise_type_display()
+    
+    def get_exercise_intensity(self, obj):
+        return obj.get_exercise_intensity()
+    
+    def get_duration_hours(self, obj):
+        return round(obj.duration_minutes / 60, 1)
+    
+    def validate_exercise_date(self, value):
+        """验证运动日期不能是未来日期"""
+        if value > date.today():
+            raise serializers.ValidationError("运动日期不能是未来日期")
+        return value
+    
+    def validate_duration_minutes(self, value):
+        """验证运动时长合理性"""
+        if value < 5:
+            raise serializers.ValidationError("运动时长不能少于5分钟")
+        if value > 480:  # 8小时
+            raise serializers.ValidationError("运动时长不能超过8小时")
+        return value
+    
+    def validate_calories_burned(self, value):
+        """验证卡路里消耗合理性"""
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("卡路里消耗必须为正数")
+        return value
+
+
+class WeeklyExerciseStatsSerializer(serializers.Serializer):
+    """一周运动统计数据序列化器"""
+    records = ExerciseRecordSerializer(many=True, read_only=True)
+    total_duration_minutes = serializers.IntegerField(read_only=True)
+    total_duration_hours = serializers.FloatField(read_only=True)
+    total_calories_burned = serializers.IntegerField(read_only=True)
+    average_daily_duration = serializers.FloatField(read_only=True)
+    average_daily_calories = serializers.FloatField(read_only=True)
+    most_frequent_exercise = serializers.CharField(read_only=True)
+    exercise_frequency = serializers.IntegerField(read_only=True)
+    fitness_score = serializers.IntegerField(read_only=True)
     recommendations = serializers.ListField(read_only=True)

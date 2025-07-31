@@ -69,3 +69,74 @@ class SleepRecord(models.Model):
     
     def __str__(self):
         return f"{self.user.userName} - {self.sleep_date} ({self.sleep_duration}min)"
+
+
+class ExerciseRecord(models.Model):
+    EXERCISE_TYPES = [
+        ('running', '跑步'),
+        ('swimming', '游泳'),
+        ('basketball', '篮球'),
+        ('football', '足球'),
+        ('tennis', '网球'),
+        ('badminton', '羽毛球'),
+        ('gym', '健身房'),
+        ('yoga', '瑜伽'),
+        ('cycling', '骑行'),
+        ('other', '其他'),
+    ]
+    
+    # MET值对应表（代谢当量）
+    MET_VALUES = {
+        'running': 8.0,
+        'swimming': 7.0,
+        'basketball': 6.5,
+        'football': 7.0,
+        'tennis': 7.0,
+        'badminton': 5.5,
+        'gym': 6.0,
+        'yoga': 3.0,
+        'cycling': 6.0,
+        'other': 5.0,
+    }
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exercise_records')
+    exercise_date = models.DateField(help_text="运动日期")
+    exercise_type = models.CharField(max_length=20, choices=EXERCISE_TYPES, help_text="运动类型")
+    duration_minutes = models.PositiveIntegerField(help_text="运动时长（分钟）")
+    calories_burned = models.PositiveIntegerField(help_text="消耗卡路里", blank=True, null=True)
+    notes = models.TextField(blank=True, help_text="备注信息")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-exercise_date', '-created_at']
+    
+    def save(self, *args, **kwargs):
+        """保存时自动计算卡路里消耗（如果没有手动输入）"""
+        if not self.calories_burned and self.duration_minutes:
+            self.calories_burned = self._calculate_calories()
+        super().save(*args, **kwargs)
+    
+    def _calculate_calories(self, weight_kg=65):
+        """
+        根据MET值计算卡路里消耗
+        公式：卡路里 = MET × 体重(kg) × 时间(小时)
+        默认体重65kg
+        """
+        met_value = self.MET_VALUES.get(self.exercise_type, 5.0)
+        duration_hours = self.duration_minutes / 60
+        calories = met_value * weight_kg * duration_hours
+        return int(calories)
+    
+    def get_exercise_intensity(self):
+        """根据MET值返回运动强度"""
+        met_value = self.MET_VALUES.get(self.exercise_type, 5.0)
+        if met_value < 3:
+            return "低强度"
+        elif met_value < 6:
+            return "中等强度"
+        else:
+            return "高强度"
+    
+    def __str__(self):
+        return f"{self.user.userName} - {self.exercise_date} - {self.get_exercise_type_display()} ({self.duration_minutes}min)"

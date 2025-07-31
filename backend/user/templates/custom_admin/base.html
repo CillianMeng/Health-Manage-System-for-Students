@@ -66,6 +66,12 @@
                                 <i class="fas fa-bed me-2"></i>睡眠记录
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'exercise_record' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'admin_panel:exercise_record_list' %}">
+                                <i class="fas fa-running me-2"></i>运动记录
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
