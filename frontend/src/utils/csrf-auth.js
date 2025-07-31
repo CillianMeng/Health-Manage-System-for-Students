@@ -270,6 +270,39 @@ class TokenAuthService {
     }
 
     /**
+     * 获取当前的认证token
+     */
+    getToken() {
+        return this.authToken;
+    }
+
+    /**
+     * 设置认证token
+     */
+    setToken(token) {
+        this.authToken = token;
+        if (token) {
+            localStorage.setItem('auth_token', token);
+        } else {
+            localStorage.removeItem('auth_token');
+        }
+    }
+
+    /**
+     * 检查是否已认证
+     */
+    isLoggedIn() {
+        return this.isAuthenticated && this.authToken;
+    }
+
+    /**
+     * 获取用户信息
+     */
+    getCurrentUser() {
+        return this.currentUser;
+    }
+
+    /**
      * 调试session信息
      */
     async debugSession() {

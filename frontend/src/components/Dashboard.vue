@@ -13,10 +13,16 @@
         <div class="nav-section">
           <h3 class="nav-title">主要功能</h3>
           <ul class="nav-list">
-            <li class="nav-item active">
-              <a href="#" class="nav-link">
+            <li class="nav-item" :class="{ active: currentView === 'overview' }">
+              <a href="#" @click.prevent="setCurrentView('overview')" class="nav-link">
                 <span class="nav-icon">📊</span>
                 <span class="nav-text">数据总览</span>
+              </a>
+            </li>
+            <li class="nav-item" :class="{ active: currentView === 'sleep' }">
+              <a href="#" @click.prevent="setCurrentView('sleep')" class="nav-link">
+                <span class="nav-icon">😴</span>
+                <span class="nav-text">睡眠记录</span>
               </a>
             </li>
             <li class="nav-item">
@@ -65,7 +71,7 @@
       <!-- 顶部栏 -->
       <header class="top-bar">
         <div class="page-title">
-          <h1>数据总览</h1>
+          <h1>{{ getPageTitle() }}</h1>
         </div>
         
         <div class="top-bar-actions">
@@ -78,66 +84,74 @@
 
       <!-- 内容区域 -->
       <div class="content-area">
-        <!-- 统计卡片 -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon primary">📊</div>
-            <div class="stat-content">
-              <h3 class="stat-number">24</h3>
-              <p class="stat-label">体检记录</p>
+        <!-- 数据总览视图 -->
+        <div v-if="currentView === 'overview'">
+          <!-- 统计卡片 -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon primary">📊</div>
+              <div class="stat-content">
+                <h3 class="stat-number">24</h3>
+                <p class="stat-label">体检记录</p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon success">💊</div>
+              <div class="stat-content">
+                <h3 class="stat-number">12</h3>
+                <p class="stat-label">用药提醒</p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon warning">⚠️</div>
+              <div class="stat-content">
+                <h3 class="stat-number">3</h3>
+                <p class="stat-label">异常指标</p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon info">📈</div>
+              <div class="stat-content">
+                <h3 class="stat-number">89%</h3>
+                <p class="stat-label">健康评分</p>
+              </div>
             </div>
           </div>
-          
-          <div class="stat-card">
-            <div class="stat-icon success">💊</div>
-            <div class="stat-content">
-              <h3 class="stat-number">12</h3>
-              <p class="stat-label">用药提醒</p>
+
+          <!-- 快速操作 -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">快速操作</h3>
             </div>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-icon warning">⚠️</div>
-            <div class="stat-content">
-              <h3 class="stat-number">3</h3>
-              <p class="stat-label">异常指标</p>
-            </div>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-icon info">📈</div>
-            <div class="stat-content">
-              <h3 class="stat-number">89%</h3>
-              <p class="stat-label">健康评分</p>
+            <div class="card-content">
+              <div class="quick-actions">
+                <button class="quick-action-btn" @click="setCurrentView('sleep')">
+                  <span class="action-icon">�</span>
+                  <span class="action-text">睡眠记录</span>
+                </button>
+                <button class="quick-action-btn">
+                  <span class="action-icon">📅</span>
+                  <span class="action-text">预约体检</span>
+                </button>
+                <button class="quick-action-btn">
+                  <span class="action-icon">💊</span>
+                  <span class="action-text">设置提醒</span>
+                </button>
+                <button class="quick-action-btn">
+                  <span class="action-icon">📊</span>
+                  <span class="action-text">生成报告</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 快速操作 -->
-        <div class="content-card">
-          <div class="card-header">
-            <h3 class="card-title">快速操作</h3>
-          </div>
-          <div class="card-content">
-            <div class="quick-actions">
-              <button class="quick-action-btn">
-                <span class="action-icon">📝</span>
-                <span class="action-text">记录数据</span>
-              </button>
-              <button class="quick-action-btn">
-                <span class="action-icon">📅</span>
-                <span class="action-text">预约体检</span>
-              </button>
-              <button class="quick-action-btn">
-                <span class="action-icon">💊</span>
-                <span class="action-text">设置提醒</span>
-              </button>
-              <button class="quick-action-btn">
-                <span class="action-icon">📊</span>
-                <span class="action-text">生成报告</span>
-              </button>
-            </div>
-          </div>
+        <!-- 睡眠记录视图 -->
+        <div v-else-if="currentView === 'sleep'">
+          <SleepRecords />
         </div>
       </div>
     </main>
@@ -145,6 +159,9 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
+import SleepRecords from './SleepRecords.vue';
+
 const props = defineProps({
   currentUser: {
     type: Object,
@@ -153,6 +170,23 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['logout']);
+
+// 当前视图状态
+const currentView = ref('overview');
+
+// 设置当前视图
+const setCurrentView = (view) => {
+  currentView.value = view;
+};
+
+// 获取页面标题
+const getPageTitle = () => {
+  const titles = {
+    overview: '数据总览',
+    sleep: '睡眠记录'
+  };
+  return titles[currentView.value] || '数据总览';
+};
 
 const logout = () => {
   emit('logout');
