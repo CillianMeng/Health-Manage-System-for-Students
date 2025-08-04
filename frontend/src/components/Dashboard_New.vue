@@ -310,50 +310,32 @@ const generateHealthReport = async () => {
   
   isGenerating.value = true;
   try {
-    const token = localStorage.getItem('auth_token');
-    console.log('Token from localStorage:', token); // 调试信息
+    const token = localStorage.getItem('authToken');
     if (!token) {
       alert('请先登录');
       return;
     }
 
-    const response = await fetch('http://127.0.0.1:8000/api/user/health-reports/generate/', {
+    const response = await fetch('/api/user/health-reports/generate/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ period_type: 'weekly' })
+      body: JSON.stringify({ period_days: 7 })
     });
 
-    console.log('Response status:', response.status); // 调试信息
+    const data = await response.json();
     
-    let data;
-    try {
-      data = await response.json();
-    } catch (jsonError) {
-      console.error('JSON解析错误:', jsonError);
-      console.log('响应文本:', await response.text());
-      alert('服务器响应格式错误');
-      return;
-    }
-    
-    console.log('Response data:', data); // 调试信息
-    
-    if (response.ok) {
+    if (response.ok && data.success) {
       alert('健康报告生成成功！');
       await loadLatestReport();
     } else {
-      alert(data.error || data.message || '生成健康报告失败');
+      alert(data.message || '生成健康报告失败');
     }
   } catch (error) {
     console.error('生成健康报告时发生错误:', error);
-    console.error('错误详情:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
-    alert(`网络错误: ${error.message}，请检查后端服务器是否正常运行`);
+    alert('网络错误，请稍后重试');
   } finally {
     isGenerating.value = false;
   }
@@ -362,10 +344,10 @@ const generateHealthReport = async () => {
 // 加载最新健康报告
 const loadLatestReport = async () => {
   try {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('authToken');
     if (!token) return;
 
-    const response = await fetch('http://127.0.0.1:8000/api/user/health-reports/latest/', {
+    const response = await fetch('/api/user/health-reports/latest/', {
       headers: {
         'Authorization': `Bearer ${token}`
       }

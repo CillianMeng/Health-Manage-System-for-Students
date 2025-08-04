@@ -1,0 +1,378 @@
+/* 健康报告专用样式 */
+
+/* 健康报告控制区 */
+.health-report-controls {
+  margin-bottom: 2rem;
+}
+
+.report-description {
+  margin-bottom: 1.5rem;
+  color: #6b7280;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.generate-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 健康报告展示区 */
+.health-report-display {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+}
+
+/* 综合评分卡片 */
+.overall-score-card {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.score-circle {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.score-progress {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.score-track {
+  fill: none;
+  stroke: #e5e7eb;
+  stroke-width: 8;
+}
+
+.score-fill {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s ease;
+}
+
+.score-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.score-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.score-info {
+  flex: 1;
+}
+
+.score-grade {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.score-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.trend-icon {
+  font-size: 1.2rem;
+}
+
+.trend-text {
+  font-weight: 600;
+  color: #374151;
+}
+
+.report-period {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* 关键洞察卡片 */
+.insights-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.insights-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.insight-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.insight-text {
+  color: #374151;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+/* 个性化建议卡片 */
+.recommendations-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.recommendations-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.recommendation-item {
+  border-radius: 10px;
+  padding: 1.5rem;
+  border-left: 4px solid #6b7280;
+  transition: all 0.2s ease;
+}
+
+.recommendation-item.high {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+}
+
+.recommendation-item.medium {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+}
+
+.recommendation-item.low {
+  background: #f0f9ff;
+  border-left-color: #3b82f6;
+}
+
+.recommendation-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.recommendation-category {
+  font-size: 1.2rem;
+}
+
+.recommendation-title {
+  font-weight: 600;
+  color: #1f2937;
+  flex: 1;
+  min-width: 200px;
+}
+
+.recommendation-priority {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recommendation-priority.high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.recommendation-priority.medium {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.recommendation-priority.low {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.recommendation-description {
+  color: #4b5563;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+/* 数据摘要卡片 */
+.data-summary-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.summary-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.summary-content {
+  flex: 1;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 4px 0;
+}
+
+.summary-detail {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* 快速操作卡片 */
+.quick-actions-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.quick-actions {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.quick-action-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.quick-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-icon {
+  font-size: 1.2rem;
+}
+
+.action-text {
+  font-size: 0.9rem;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .overall-score-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+  
+  .recommendation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .recommendation-title {
+    min-width: unset;
+  }
+}
