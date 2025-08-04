@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import datetime, time, timedelta
+import json
 
 # Create your models here.
 class User(models.Model):
@@ -218,3 +219,130 @@ class DietRecord(models.Model):
     
     def __str__(self):
         return f"{self.user.userName} - {self.diet_date} - {self.get_meal_type_display()} - {self.food_name} ({self.total_calories}kcal)"
+
+
+class HealthReport(models.Model):
+    """健康报告模型"""
+    HEALTH_TRENDS = [
+        ('improving', '改善中'),
+        ('stable', '稳定'),
+        ('declining', '下降'),
+    ]
+    
+    HEALTH_GRADES = [
+        ('excellent', '优秀'),
+        ('good', '良好'),
+        ('fair', '一般'),
+        ('needs_improvement', '需改善'),
+        ('poor', '较差'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_reports')
+    report_date = models.DateField(help_text="报告生成日期")
+    period_start = models.DateField(help_text="统计周期开始日期")
+    period_end = models.DateField(help_text="统计周期结束日期")
+    
+    # 评分字段
+    overall_score = models.PositiveIntegerField(help_text="综合健康评分（0-100）", default=0)
+    sleep_score = models.PositiveIntegerField(help_text="睡眠健康评分（0-100）", default=0)
+    exercise_score = models.PositiveIntegerField(help_text="运动健康评分（0-100）", default=0)
+    diet_score = models.PositiveIntegerField(help_text="饮食健康评分（0-100）", default=0)
+    
+    # 健康等级和趋势
+    health_grade = models.CharField(max_length=20, choices=HEALTH_GRADES, help_text="健康等级")
+    health_trend = models.CharField(max_length=20, choices=HEALTH_TRENDS, help_text="健康趋势")
+    
+    # JSON字段存储复杂数据
+    key_insights = models.TextField(help_text="关键洞察（JSON格式）", default='[]')
+    recommendations = models.TextField(help_text="健康建议（JSON格式）", default='[]')
+    data_summary = models.TextField(help_text="数据摘要（JSON格式）", default='{}')
+    detailed_analysis = models.TextField(help_text="详细分析（JSON格式）", default='{}')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['user', 'period_start', 'period_end']
+        ordering = ['-report_date', '-created_at']
+        verbose_name = "健康报告"
+        verbose_name_plural = "健康报告"
+    
+    def save(self, *args, **kwargs):
+        """保存前设置健康等级"""
+        self.health_grade = self._calculate_health_grade()
+        super().save(*args, **kwargs)
+    
+    def _calculate_health_grade(self):
+        """根据综合评分计算健康等级"""
+        if self.overall_score >= 90:
+            return 'excellent'
+        elif self.overall_score >= 80:
+            return 'good'
+        elif self.overall_score >= 70:
+            return 'fair'
+        elif self.overall_score >= 60:
+            return 'needs_improvement'
+        else:
+            return 'poor'
+    
+    def get_health_grade_display_color(self):
+        """返回健康等级对应的颜色"""
+        color_map = {
+            'excellent': '#22c55e',  # 绿色
+            'good': '#84cc16',       # 浅绿色
+            'fair': '#eab308',       # 黄色
+            'needs_improvement': '#f97316',  # 橙色
+            'poor': '#ef4444',       # 红色
+        }
+        return color_map.get(self.health_grade, '#6b7280')
+    
+    def get_key_insights_list(self):
+        """返回关键洞察列表"""
+        try:
+            return json.loads(self.key_insights)
+        except (json.JSONDecodeError, TypeError):
+            return []
+    
+    def get_recommendations_list(self):
+        """返回健康建议列表"""
+        try:
+            return json.loads(self.recommendations)
+        except (json.JSONDecodeError, TypeError):
+            return []
+    
+    def get_data_summary_dict(self):
+        """返回数据摘要字典"""
+        try:
+            return json.loads(self.data_summary)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+    
+    def get_detailed_analysis_dict(self):
+        """返回详细分析字典"""
+        try:
+            return json.loads(self.detailed_analysis)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+    
+    def set_key_insights(self, insights_list):
+        """设置关键洞察"""
+        self.key_insights = json.dumps(insights_list, ensure_ascii=False)
+    
+    def set_recommendations(self, recommendations_list):
+        """设置健康建议"""
+        self.recommendations = json.dumps(recommendations_list, ensure_ascii=False)
+    
+    def set_data_summary(self, summary_dict):
+        """设置数据摘要"""
+        self.data_summary = json.dumps(summary_dict, ensure_ascii=False)
+    
+    def set_detailed_analysis(self, analysis_dict):
+        """设置详细分析"""
+        self.detailed_analysis = json.dumps(analysis_dict, ensure_ascii=False)
+    
+    def get_period_display(self):
+        """返回报告周期的显示格式"""
+        return f"{self.period_start.strftime('%Y-%m-%d')} to {self.period_end.strftime('%Y-%m-%d')}"
+    
+    def __str__(self):
+        return f"{self.user.userName} - {self.get_period_display()} - {self.overall_score}分"
