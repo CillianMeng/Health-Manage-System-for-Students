@@ -1,0 +1,208 @@
+<template>
+  <header class="header">
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-icon">🏥</div>
+        <h1 class="brand-title">学生健康管理系统</h1>
+      </div>
+      
+      <div class="user-section">
+        <div class="user-avatar">
+          {{ userInitial }}
+        </div>
+        <div class="user-info">
+          <div class="user-name">{{ currentUser?.userName || '用户' }}</div>
+          <div class="user-role">学生</div>
+        </div>
+        <button @click="handleLogout" class="logout-btn">
+          <span>🚪</span>
+          <span>退出登录</span>
+        </button>
+      </div>
+    </div>
+  </header>
+</template>
+
+<script setup>
+import { computed } from 'vue';
+
+const props = defineProps({
+  currentUser: {
+    type: Object,
+    default: null
+  }
+});
+
+const emit = defineEmits(['logout']);
+
+const userInitial = computed(() => {
+  const name = props.currentUser?.userName || '用户';
+  return name.charAt(0).toUpperCase();
+});
+
+const handleLogout = () => {
+  emit('logout');
+};
+</script>
+
+<style scoped>
+.header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  font-size: 24px;
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #10a37f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+@media (min-width: 1200px) {
+  .header-content {
+    max-width: 1400px;
+    padding: 0 32px;
+    height: 64px;
+  }
+  
+  .brand-title {
+    font-size: 20px;
+  }
+  
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 16px;
+  }
+  
+  .brand-title {
+    font-size: 16px;
+  }
+  
+  .user-info {
+    display: none;
+  }
+  
+  .logout-btn span:last-child {
+    display: none;
+  }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .header {
+    background: #374151;
+    border-bottom-color: #4b5563;
+  }
+  
+  .brand-title {
+    color: #f9fafb;
+  }
+  
+  .user-name {
+    color: #f9fafb;
+  }
+  
+  .user-role {
+    color: #d1d5db;
+  }
+  
+  .logout-btn {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f3f4f6;
+  }
+  
+  .logout-btn:hover {
+    background: #6b7280;
+    color: #f9fafb;
+  }
+}
+</style>

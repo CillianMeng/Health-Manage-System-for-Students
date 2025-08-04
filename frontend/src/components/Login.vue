@@ -224,11 +224,7 @@ const debugAuth = async () => {
 .login-page {
   display: flex;
   min-height: 100vh;
-  width: 100%;  /* 确保占满宽度 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 /* 左侧装饰区域 */

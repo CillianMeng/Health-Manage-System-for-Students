@@ -1,0 +1,136 @@
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}
+    {% if object %}编辑运动记录{% else %}添加运动记录{% endif %} - 后台管理系统
+{% endblock %}
+
+{% block page_title %}
+    {% if object %}编辑运动记录{% else %}添加运动记录{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            {% if object %}编辑运动记录{% else %}添加运动记录{% endif %}
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.user.id_for_label }}" class="form-label">{{ form.user.label }}</label>
+                        {{ form.user }}
+                        {% if form.user.errors %}
+                            <div class="text-danger small">{{ form.user.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.exercise_date.id_for_label }}" class="form-label">{{ form.exercise_date.label }}</label>
+                        {{ form.exercise_date }}
+                        {% if form.exercise_date.errors %}
+                            <div class="text-danger small">{{ form.exercise_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.exercise_type.id_for_label }}" class="form-label">{{ form.exercise_type.label }}</label>
+                        {{ form.exercise_type }}
+                        {% if form.exercise_type.errors %}
+                            <div class="text-danger small">{{ form.exercise_type.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.duration_minutes.id_for_label }}" class="form-label">{{ form.duration_minutes.label }}</label>
+                        {{ form.duration_minutes }}
+                        {% if form.duration_minutes.errors %}
+                            <div class="text-danger small">{{ form.duration_minutes.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">运动时长，范围：5-480分钟</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.calories_burned.id_for_label }}" class="form-label">{{ form.calories_burned.label }}</label>
+                        {{ form.calories_burned }}
+                        {% if form.calories_burned.errors %}
+                            <div class="text-danger small">{{ form.calories_burned.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">可选，留空将根据运动类型和时长自动计算</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'admin_panel:exercise_record_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>返回列表
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>
+                    {% if object %}更新记录{% else %}创建记录{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 运动类型说明卡片 -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-info">卡路里计算说明</h6>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">如果不手动输入卡路里，系统将根据以下MET值自动计算：</p>
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li><strong>跑步:</strong> 8.0 MET (高强度)</li>
+                    <li><strong>游泳:</strong> 7.0 MET (高强度)</li>
+                    <li><strong>篮球:</strong> 6.5 MET (高强度)</li>
+                    <li><strong>足球:</strong> 7.0 MET (高强度)</li>
+                    <li><strong>网球:</strong> 7.0 MET (高强度)</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li><strong>羽毛球:</strong> 5.5 MET (中等强度)</li>
+                    <li><strong>健身房:</strong> 6.0 MET (高强度)</li>
+                    <li><strong>瑜伽:</strong> 3.0 MET (低强度)</li>
+                    <li><strong>骑行:</strong> 6.0 MET (高强度)</li>
+                    <li><strong>其他:</strong> 5.0 MET (中等强度)</li>
+                </ul>
+            </div>
+        </div>
+        <p class="text-muted small">计算公式：卡路里 = MET × 体重(65kg) × 时间(小时)</p>
+    </div>
+</div>
+{% endblock %}
