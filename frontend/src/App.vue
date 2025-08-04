@@ -132,6 +132,7 @@ const handleNavigate = (route) => {
 <style scoped>
 .app {
   min-height: 100vh;
+  width: 100%;
   background: #f7f7f8;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
