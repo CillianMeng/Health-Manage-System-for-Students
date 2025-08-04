@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,8 +7,10 @@ from django.utils import timezone
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer, ExerciseRecordSerializer, WeeklyExerciseStatsSerializer, DietRecordSerializer, WeeklyDietStatsSerializer, FoodCalorieReferenceSerializer
-from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.http import Http404
+from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer, ExerciseRecordSerializer, WeeklyExerciseStatsSerializer, DietRecordSerializer, WeeklyDietStatsSerializer, FoodCalorieReferenceSerializer, HealthReportSerializer, HealthReportListSerializer, HealthReportGenerateSerializer, HealthReportStatisticsSerializer
+from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference, HealthReport
 from .utils import (
     set_user_password, 
     create_user_session, 
@@ -1096,3 +1098,557 @@ class WeeklyDietStatsView(APIView):
             recommendations.append("注意控制食物分量，避免过量摄入")
         
         return recommendations if recommendations else ["您的饮食状况良好，继续保持健康的饮食习惯"]
+
+
+# ================================
+# 健康报告 API
+# ================================
+
+class HealthReportGenerateView(APIView):
+    """生成健康报告"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            period_type = request.data.get('period_type', 'weekly')  # weekly, monthly
+            
+            if period_type not in ['weekly', 'monthly']:
+                return Response({
+                    'error': '无效的周期类型'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 生成健康报告
+            from .health_analyzer import HealthAnalyzer
+            period_days = 7 if period_type == 'weekly' else 30
+            analyzer = HealthAnalyzer(request.user, period_days)
+            report_data = analyzer.generate_comprehensive_report(request.user, period_type)
+            
+            if not report_data:
+                return Response({
+                    'error': '数据不足，无法生成健康报告'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 保存报告到数据库
+            health_report = HealthReport.objects.create(
+                user=request.user,
+                period_type=period_type,
+                period_start=report_data['period_start'],
+                period_end=report_data['period_end'],
+                overall_score=report_data['overall_score'],
+                health_grade=report_data['health_grade'],
+                scores=report_data['scores'],
+                trends=report_data.get('trends', {}),
+                insights=report_data.get('insights', []),
+                recommendations=report_data.get('recommendations', [])
+            )
+            
+            serializer = HealthReportSerializer(health_report)
+            return Response({
+                'message': '健康报告生成成功',
+                'report': serializer.data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                'error': f'生成健康报告时出错: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportLatestView(APIView):
+    """获取最新健康报告"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            period_type = request.query_params.get('period_type', 'weekly')
+            
+            # 获取最新的报告
+            latest_report = HealthReport.objects.filter(
+                user=request.user,
+                period_type=period_type
+            ).order_by('-created_at').first()
+            
+            if not latest_report:
+                return Response({
+                    'message': '暂无健康报告',
+                    'report': None
+                }, status=status.HTTP_200_OK)
+            
+            serializer = HealthReportSerializer(latest_report)
+            return Response({
+                'report': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'获取健康报告时出错: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportListView(APIView):
+    """获取健康报告列表"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            period_type = request.query_params.get('period_type', 'weekly')
+            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get('page_size', 10))
+            
+            # 查询报告列表
+            reports = HealthReport.objects.filter(
+                user=request.user,
+                period_type=period_type
+            ).order_by('-created_at')
+            
+            # 分页
+            paginator = Paginator(reports, page_size)
+            try:
+                current_page = paginator.page(page)
+            except PageNotAnInteger:
+                current_page = paginator.page(1)
+            except EmptyPage:
+                current_page = paginator.page(paginator.num_pages)
+            
+            serializer = HealthReportSerializer(current_page.object_list, many=True)
+            
+            return Response({
+                'reports': serializer.data,
+                'pagination': {
+                    'current_page': page,
+                    'total_pages': paginator.num_pages,
+                    'total_count': paginator.count,
+                    'has_next': current_page.has_next(),
+                    'has_previous': current_page.has_previous()
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'获取健康报告列表时出错: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportDetailView(APIView):
+    """获取健康报告详情"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, report_id):
+        try:
+            # 获取指定的报告
+            report = get_object_or_404(
+                HealthReport,
+                id=report_id,
+                user=request.user
+            )
+            
+            serializer = HealthReportSerializer(report)
+            return Response({
+                'report': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Http404:
+            return Response({
+                'error': '健康报告不存在'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': f'获取健康报告详情时出错: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportStatisticsView(APIView):
+    """获取健康报告统计信息"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            period_type = request.query_params.get('period_type', 'weekly')
+            
+            # 获取最近的报告进行统计
+            reports = HealthReport.objects.filter(
+                user=request.user,
+                period_type=period_type
+            ).order_by('-created_at')[:10]  # 最近10期
+            
+            if not reports:
+                return Response({
+                    'message': '暂无健康报告统计数据',
+                    'statistics': None
+                }, status=status.HTTP_200_OK)
+            
+            # 计算统计信息
+            scores = [report.overall_score for report in reports]
+            sleep_scores = [report.scores.get('sleep', 0) for report in reports if report.scores]
+            exercise_scores = [report.scores.get('exercise', 0) for report in reports if report.scores]
+            diet_scores = [report.scores.get('diet', 0) for report in reports if report.scores]
+            
+            statistics = {
+                'total_reports': len(reports),
+                'average_score': sum(scores) / len(scores) if scores else 0,
+                'highest_score': max(scores) if scores else 0,
+                'lowest_score': min(scores) if scores else 0,
+                'score_trend': 'improving' if len(scores) >= 2 and scores[0] > scores[-1] else 'declining' if len(scores) >= 2 else 'stable',
+                'category_averages': {
+                    'sleep': sum(sleep_scores) / len(sleep_scores) if sleep_scores else 0,
+                    'exercise': sum(exercise_scores) / len(exercise_scores) if exercise_scores else 0,
+                    'diet': sum(diet_scores) / len(diet_scores) if diet_scores else 0
+                },
+                'recent_scores': scores[:5],  # 最近5期的分数
+                'grade_distribution': {}
+            }
+            
+            # 计算等级分布
+            grades = [report.health_grade for report in reports]
+            for grade in ['A', 'B', 'C', 'D', 'F']:
+                statistics['grade_distribution'][grade] = grades.count(grade)
+            
+            return Response({
+                'statistics': statistics
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'获取健康报告统计信息时出错: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportGenerateView(APIView):
+    """生成健康报告视图"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def post(self, request):
+        """生成新的健康报告"""
+        try:
+            # 验证请求数据
+            serializer = HealthReportGenerateSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response({
+                    'success': False,
+                    'message': '请求参数错误',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            period_days = serializer.validated_data.get('period_days', 7)
+            user = request.user
+            
+            # 导入健康分析器
+            from .health_analyzer import HealthAnalyzer
+            
+            # 创建健康分析器实例
+            analyzer = HealthAnalyzer(user, period_days)
+            
+            # 计算报告期间
+            end_date = date.today()
+            start_date = end_date - timedelta(days=period_days - 1)
+            
+            # 检查是否已存在相同周期的报告
+            existing_report = HealthReport.objects.filter(
+                user=user,
+                period_start=start_date,
+                period_end=end_date
+            ).first()
+            
+            if existing_report:
+                return Response({
+                    'success': True,
+                    'message': '该周期的健康报告已存在',
+                    'report_id': existing_report.id
+                }, status=status.HTTP_200_OK)
+            
+            # 计算各项评分
+            sleep_score = analyzer.calculate_sleep_score()
+            exercise_score = analyzer.calculate_exercise_score()
+            diet_score = analyzer.calculate_diet_score()
+            overall_score = analyzer.calculate_overall_score()
+            
+            # 生成报告内容
+            key_insights = analyzer.generate_key_insights()
+            recommendations = analyzer.generate_recommendations()
+            data_summary = analyzer.generate_data_summary()
+            detailed_analysis = analyzer.generate_detailed_analysis()
+            health_trend = analyzer.determine_health_trend()
+            
+            # 创建健康报告
+            health_report = HealthReport.objects.create(
+                user=user,
+                report_date=date.today(),
+                period_start=start_date,
+                period_end=end_date,
+                overall_score=overall_score,
+                sleep_score=sleep_score,
+                exercise_score=exercise_score,
+                diet_score=diet_score,
+                health_trend=health_trend
+            )
+            
+            # 设置JSON数据
+            health_report.set_key_insights(key_insights)
+            health_report.set_recommendations(recommendations)
+            health_report.set_data_summary(data_summary)
+            health_report.set_detailed_analysis(detailed_analysis)
+            health_report.save()
+            
+            return Response({
+                'success': True,
+                'message': '健康报告生成成功',
+                'report_id': health_report.id
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'生成健康报告时发生错误: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportLatestView(APIView):
+    """获取最新健康报告视图"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户最新的健康报告"""
+        try:
+            user = request.user
+            
+            # 获取最新的健康报告
+            latest_report = HealthReport.objects.filter(user=user).first()
+            
+            if not latest_report:
+                return Response({
+                    'success': False,
+                    'message': '暂无健康报告，请先生成报告'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # 序列化报告数据
+            serializer = HealthReportSerializer(latest_report)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'获取健康报告时发生错误: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportListView(APIView):
+    """健康报告列表视图"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户的健康报告历史列表"""
+        try:
+            user = request.user
+            
+            # 获取查询参数
+            page = int(request.GET.get('page', 1))
+            limit = int(request.GET.get('limit', 10))
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            
+            # 构建查询条件
+            queryset = HealthReport.objects.filter(user=user)
+            
+            if start_date:
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                    queryset = queryset.filter(report_date__gte=start_date_obj)
+                except ValueError:
+                    return Response({
+                        'success': False,
+                        'message': '开始日期格式错误，应为YYYY-MM-DD'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if end_date:
+                try:
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                    queryset = queryset.filter(report_date__lte=end_date_obj)
+                except ValueError:
+                    return Response({
+                        'success': False,
+                        'message': '结束日期格式错误，应为YYYY-MM-DD'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 总数统计
+            total_count = queryset.count()
+            
+            # 分页
+            start_index = (page - 1) * limit
+            end_index = start_index + limit
+            reports = queryset[start_index:end_index]
+            
+            # 序列化数据
+            serializer = HealthReportListSerializer(reports, many=True)
+            
+            # 构建分页响应
+            has_next = end_index < total_count
+            has_previous = page > 1
+            
+            return Response({
+                'count': total_count,
+                'next': f'?page={page + 1}&limit={limit}' if has_next else None,
+                'previous': f'?page={page - 1}&limit={limit}' if has_previous else None,
+                'results': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'获取健康报告列表时发生错误: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportDetailView(APIView):
+    """健康报告详情视图"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request, report_id):
+        """获取指定健康报告的详细信息"""
+        try:
+            user = request.user
+            
+            # 获取报告
+            try:
+                report = HealthReport.objects.get(id=report_id, user=user)
+            except HealthReport.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'message': '健康报告不存在'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # 序列化报告数据
+            serializer = HealthReportSerializer(report)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'获取健康报告详情时发生错误: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def delete(self, request, report_id):
+        """删除指定的健康报告"""
+        try:
+            user = request.user
+            
+            # 获取报告
+            try:
+                report = HealthReport.objects.get(id=report_id, user=user)
+            except HealthReport.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'message': '健康报告不存在'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # 删除报告
+            report.delete()
+            
+            return Response({
+                'success': True,
+                'message': '健康报告删除成功'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'删除健康报告时发生错误: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthReportStatisticsView(APIView):
+    """健康报告统计视图"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户健康报告统计信息"""
+        try:
+            user = request.user
+            
+            # 获取所有报告
+            reports = HealthReport.objects.filter(user=user)
+            
+            if not reports.exists():
+                return Response({
+                    'total_reports': 0,
+                    'average_overall_score': 0,
+                    'best_score': 0,
+                    'worst_score': 0,
+                    'improvement_trend': 'none',
+                    'score_history': [],
+                    'category_averages': {
+                        'sleep': 0,
+                        'exercise': 0,
+                        'diet': 0
+                    }
+                }, status=status.HTTP_200_OK)
+            
+            # 基础统计
+            total_reports = reports.count()
+            overall_scores = [report.overall_score for report in reports]
+            average_overall_score = sum(overall_scores) / len(overall_scores)
+            best_score = max(overall_scores)
+            worst_score = min(overall_scores)
+            
+            # 趋势分析
+            if len(overall_scores) >= 2:
+                recent_scores = overall_scores[:3]  # 最近3次
+                earlier_scores = overall_scores[-3:] if len(overall_scores) > 3 else overall_scores[:-1]
+                
+                recent_avg = sum(recent_scores) / len(recent_scores)
+                earlier_avg = sum(earlier_scores) / len(earlier_scores)
+                
+                if recent_avg > earlier_avg + 5:
+                    improvement_trend = 'positive'
+                elif recent_avg < earlier_avg - 5:
+                    improvement_trend = 'negative'
+                else:
+                    improvement_trend = 'stable'
+            else:
+                improvement_trend = 'insufficient_data'
+            
+            # 评分历史
+            score_history = []
+            for report in reports.order_by('report_date')[:10]:  # 最近10次报告
+                score_history.append({
+                    'period': report.get_period_display(),
+                    'overall_score': report.overall_score
+                })
+            
+            # 各类别平均分
+            sleep_scores = [report.sleep_score for report in reports]
+            exercise_scores = [report.exercise_score for report in reports]
+            diet_scores = [report.diet_score for report in reports]
+            
+            category_averages = {
+                'sleep': round(sum(sleep_scores) / len(sleep_scores), 1),
+                'exercise': round(sum(exercise_scores) / len(exercise_scores), 1),
+                'diet': round(sum(diet_scores) / len(diet_scores), 1)
+            }
+            
+            return Response({
+                'total_reports': total_reports,
+                'average_overall_score': round(average_overall_score, 1),
+                'best_score': best_score,
+                'worst_score': worst_score,
+                'improvement_trend': improvement_trend,
+                'score_history': score_history,
+                'category_averages': category_averages
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'获取健康报告统计时发生错误: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
