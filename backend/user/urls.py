@@ -17,7 +17,12 @@ from .views import (
     DietRecordView,
     DietRecordDetailView,
     WeeklyDietStatsView,
-    FoodCalorieReferenceView
+    FoodCalorieReferenceView,
+    HealthReportGenerateView,
+    HealthReportLatestView,
+    HealthReportListView,
+    HealthReportDetailView,
+    HealthReportStatisticsView
 )
 
 urlpatterns = [
@@ -48,4 +53,11 @@ urlpatterns = [
     # 食物卡路里参考路由
     path('food-calories/', FoodCalorieReferenceView.as_view(), name='food_calories'),
     path('food-calories/search/', FoodCalorieReferenceView.as_view(), name='food_calories_search'),
+    
+    # 健康报告相关路由
+    path('health-reports/generate/', HealthReportGenerateView.as_view(), name='health_report_generate'),
+    path('health-reports/latest/', HealthReportLatestView.as_view(), name='health_report_latest'),
+    path('health-reports/', HealthReportListView.as_view(), name='health_report_list'),
+    path('health-reports/<int:report_id>/', HealthReportDetailView.as_view(), name='health_report_detail'),
+    path('health-reports/statistics/', HealthReportStatisticsView.as_view(), name='health_report_statistics'),
 ]

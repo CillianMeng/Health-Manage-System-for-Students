@@ -1,0 +1,306 @@
+/* Exercise Chart 组件样式 */
+.exercise-chart {
+  width: 100%;
+}
+
+.chart-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.chart-header h3 {
+  font-size: 24px;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.chart-description {
+  color: #7f8c8d;
+  font-size: 16px;
+  margin: 0;
+}
+
+.chart-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* 图表区域 - 一行一张图 */
+.chart-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.chart-container {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.chart-container:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.chart-title {
+  font-size: 18px;
+  color: #343a40;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.chart-canvas {
+  width: 100% !important;
+  height: 280px !important;
+  max-height: 280px;
+}
+
+.pie-chart {
+  width: 320px !important;
+  height: 320px !important;
+  max-width: 320px;
+  max-height: 320px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* 分析容器 */
+.analysis-container {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.analysis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 健身评分区域 */
+.score-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.score-number {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.score-description {
+  flex: 1;
+}
+
+.score-text {
+  font-size: 16px;
+  color: #495057;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 统计列表 */
+.stats-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e9ecef;
+  border-radius: 8px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #343a40;
+}
+
+.stat-unit {
+  font-size: 12px;
+  color: #6c757d;
+  margin-left: 4px;
+}
+
+.stat-desc {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* 推荐建议 */
+.recommendations {
+  background: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.recommendations h5 {
+  margin: 0 0 16px 0;
+  color: #0056b3;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.recommendation-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommendation-list li {
+  padding: 8px 0;
+  color: #495057;
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-bottom: 1px solid #cce7ff;
+}
+
+.recommendation-list li:last-child {
+  border-bottom: none;
+}
+
+.recommendation-list li:before {
+  content: '💡';
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+/* 无数据状态 */
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.no-data-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.no-data h3 {
+  margin: 0 0 8px 0;
+  color: #495057;
+  font-size: 18px;
+}
+
+.no-data p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .chart-container {
+    padding: 16px;
+  }
+  
+  .chart-canvas {
+    height: 240px !important;
+  }
+  
+  .pie-chart {
+    width: 280px !important;
+    height: 280px !important;
+    max-width: 280px;
+    max-height: 280px;
+  }
+  
+  .score-section {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .score-circle {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .score-number {
+    font-size: 28px;
+  }
+  
+  .stats-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .analysis-container {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-canvas {
+    height: 200px !important;
+  }
+  
+  .pie-chart {
+    width: 240px !important;
+    height: 240px !important;
+    max-width: 240px;
+    max-height: 240px;
+  }
+  
+  .chart-title {
+    font-size: 16px;
+  }
+}

@@ -1,4 +1,4 @@
-from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference
+from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference, HealthReport
 from rest_framework import serializers
 from .utils import verify_user_password
 from datetime import datetime, date
@@ -227,3 +227,131 @@ class WeeklyDietStatsSerializer(serializers.Serializer):
     daily_calories_target = serializers.IntegerField(read_only=True, default=2000)  # 每日推荐摄入量
     target_achievement_rate = serializers.FloatField(read_only=True)  # 目标达成率
     recommendations = serializers.ListField(read_only=True)
+
+
+class HealthReportSerializer(serializers.ModelSerializer):
+    """健康报告序列化器"""
+    health_grade_display = serializers.SerializerMethodField(read_only=True)
+    health_trend_display = serializers.SerializerMethodField(read_only=True)
+    period = serializers.SerializerMethodField(read_only=True)
+    grade = serializers.SerializerMethodField(read_only=True)
+    scores = serializers.SerializerMethodField(read_only=True)
+    key_insights = serializers.SerializerMethodField(read_only=True)
+    recommendations = serializers.SerializerMethodField(read_only=True)
+    data_summary = serializers.SerializerMethodField(read_only=True)
+    detailed_analysis = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = HealthReport
+        fields = [
+            'id', 'report_date', 'period_start', 'period_end', 'period',
+            'overall_score', 'sleep_score', 'exercise_score', 'diet_score',
+            'scores', 'health_grade', 'health_grade_display', 'grade',
+            'health_trend', 'health_trend_display',
+            'key_insights', 'recommendations', 'data_summary', 'detailed_analysis',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_health_grade_display(self, obj):
+        return obj.get_health_grade_display()
+    
+    def get_health_trend_display(self, obj):
+        return obj.get_health_trend_display()
+    
+    def get_period(self, obj):
+        return obj.get_period_display()
+    
+    def get_grade(self, obj):
+        # 返回英文的等级简写
+        grade_map = {
+            'excellent': 'Excellent',
+            'good': 'Good',
+            'fair': 'Fair',
+            'needs_improvement': 'Needs Improvement',
+            'poor': 'Poor'
+        }
+        return grade_map.get(obj.health_grade, 'Unknown')
+    
+    def get_scores(self, obj):
+        """返回各维度评分字典"""
+        return {
+            'sleep': obj.sleep_score,
+            'exercise': obj.exercise_score,
+            'diet': obj.diet_score
+        }
+    
+    def get_key_insights(self, obj):
+        """返回关键洞察列表"""
+        return obj.get_key_insights_list()
+    
+    def get_recommendations(self, obj):
+        """返回健康建议列表"""
+        return obj.get_recommendations_list()
+    
+    def get_data_summary(self, obj):
+        """返回数据摘要"""
+        return obj.get_data_summary_dict()
+    
+    def get_detailed_analysis(self, obj):
+        """返回详细分析"""
+        return obj.get_detailed_analysis_dict()
+
+
+class HealthReportListSerializer(serializers.ModelSerializer):
+    """健康报告列表序列化器（简化版）"""
+    period = serializers.SerializerMethodField(read_only=True)
+    grade = serializers.SerializerMethodField(read_only=True)
+    health_grade_display = serializers.SerializerMethodField(read_only=True)
+    health_trend_display = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = HealthReport
+        fields = [
+            'id', 'report_date', 'period', 'overall_score', 
+            'health_grade', 'health_grade_display', 'grade',
+            'health_trend', 'health_trend_display', 'created_at'
+        ]
+    
+    def get_period(self, obj):
+        return obj.get_period_display()
+    
+    def get_grade(self, obj):
+        grade_map = {
+            'excellent': 'Excellent',
+            'good': 'Good',
+            'fair': 'Fair',
+            'needs_improvement': 'Needs Improvement',
+            'poor': 'Poor'
+        }
+        return grade_map.get(obj.health_grade, 'Unknown')
+    
+    def get_health_grade_display(self, obj):
+        return obj.get_health_grade_display()
+    
+    def get_health_trend_display(self, obj):
+        return obj.get_health_trend_display()
+
+
+class HealthReportGenerateSerializer(serializers.Serializer):
+    """生成健康报告的请求序列化器"""
+    period_days = serializers.IntegerField(default=7, min_value=1, max_value=30)
+    
+    def validate_period_days(self, value):
+        """验证统计周期"""
+        if value < 1:
+            raise serializers.ValidationError("统计周期不能少于1天")
+        if value > 30:
+            raise serializers.ValidationError("统计周期不能超过30天")
+        return value
+
+
+class HealthReportStatisticsSerializer(serializers.Serializer):
+    """健康报告统计序列化器"""
+    total_reports = serializers.IntegerField(read_only=True)
+    average_overall_score = serializers.FloatField(read_only=True)
+    best_score = serializers.IntegerField(read_only=True)
+    worst_score = serializers.IntegerField(read_only=True)
+    improvement_trend = serializers.CharField(read_only=True)
+    score_history = serializers.ListField(read_only=True)
+    category_averages = serializers.DictField(read_only=True)
