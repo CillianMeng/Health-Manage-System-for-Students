@@ -101,20 +101,6 @@ const handleKeyPress = (event) => {
 const clearError = () => {
     errorMessage.value = '';
 };
-
-// 调试功能
-const debugAuth = async () => {
-    try {
-        const debugResult = await csrfAuthService.debugSession();
-        console.log('🔧 调试信息:', debugResult);
-        
-        if (debugResult.success) {
-            console.log('Session详情:', debugResult.data);
-        }
-    } catch (error) {
-        console.error('调试失败:', error);
-    }
-};
 </script>
 
 <template>
@@ -204,15 +190,8 @@ const debugAuth = async () => {
               <span class="separator">·</span>
               <button class="help-link" @click.prevent="$emit('show-register')">创建账户</button>
             </div>
-            
-            <!-- CSRF状态显示（开发环境） -->
-            <div v-if="!isInitializing" class="csrf-status">
-              <small>
-                🔐 CSRF保护: {{ csrfToken ? '已启用' : '未启用' }}
-                <button v-if="csrfToken" @click="debugAuth" class="debug-btn" type="button">🔧</button>
-              </small>
-            </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -338,6 +317,7 @@ const debugAuth = async () => {
   padding: 48px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border: 1px solid #e5e7eb;
+  color: #1f2937;           /* 确保整个表单区域使用深色文字 */
 }
 
 .login-header {
@@ -374,7 +354,7 @@ const debugAuth = async () => {
 .form-label {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: #374151;           /* 确保标签文字颜色 */
 }
 
 .form-input {
@@ -384,18 +364,26 @@ const debugAuth = async () => {
   font-size: 16px;
   transition: all 0.2s ease;
   background: white;
+  color: #1f2937;           /* 明确设置深灰色文字 */
 }
 
 .form-input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #1f2937;           /* 聚焦时也保持深色文字 */
 }
 
 .form-input:disabled {
   background: #f9fafb;
-  color: #9ca3af;
+  color: #9ca3af;           /* 禁用时的灰色文字 */
   cursor: not-allowed;
+}
+
+/* 确保 placeholder 文字可见 */
+.form-input::placeholder {
+  color: #9ca3af;           /* 灰色的占位符文字 */
+  opacity: 1;               /* 确保不透明 */
 }
 
 /* 错误信息 */

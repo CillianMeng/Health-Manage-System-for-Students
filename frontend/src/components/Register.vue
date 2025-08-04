@@ -11,6 +11,7 @@ const formData = ref({
 const errors = ref({});
 const isLoading = ref(false);
 const passwordStrength = ref(0);
+const successMessage = ref('');
 
 // 定义emit事件
 const emit = defineEmits(['register-success', 'show-login']);
@@ -30,6 +31,21 @@ const onPasswordChange = () => {
   passwordStrength.value = checkPasswordStrength(formData.value.password);
   if (errors.value.password) {
     delete errors.value.password;
+  }
+  // 清除通用错误信息
+  if (errors.value.general) {
+    errors.value.general = '';
+  }
+};
+
+// 清除错误信息的通用函数
+const clearErrors = (fieldName) => {
+  if (fieldName && errors.value[fieldName]) {
+    delete errors.value[fieldName];
+  }
+  // 清除通用错误
+  if (errors.value.general) {
+    errors.value.general = '';
   }
 };
 
@@ -56,6 +72,11 @@ const validateForm = () => {
   }
   
   errors.value = newErrors;
+  // 清除之前的成功消息
+  if (Object.keys(newErrors).length > 0) {
+    successMessage.value = '';
+  }
+  
   return Object.keys(newErrors).length === 0;
 };
 
@@ -67,6 +88,9 @@ const handleRegister = async () => {
   
   try {
     isLoading.value = true;
+    // 清除之前的消息
+    errors.value = {};
+    successMessage.value = '';
     
     // 初始化CSRF服务
     await csrfAuthService.initialize();
@@ -77,7 +101,8 @@ const handleRegister = async () => {
     );
     
     if (result.success) {
-      emit('register-success', result.data);
+      // 显示成功消息
+      successMessage.value = '注册成功！正在跳转到登录页面...';
       
       // 清空表单
       formData.value = {
@@ -87,19 +112,54 @@ const handleRegister = async () => {
       };
       errors.value = {};
       passwordStrength.value = 0;
+      
+      // 延迟2秒后发射事件和跳转
+      setTimeout(() => {
+        emit('register-success', result.data);
+        successMessage.value = '';
+      }, 2000);
     } else {
       // 处理服务器返回的错误
       if (result.error) {
         if (typeof result.error === 'object') {
+          // 处理字段特定的错误
           errors.value = result.error;
+          
+          // 如果有用户名相关错误，给出友好提示
+          if (result.error.userName || result.error.username) {
+            const userError = result.error.userName || result.error.username;
+            if (Array.isArray(userError)) {
+              errors.value.username = userError[0];
+            } else {
+              errors.value.username = userError;
+            }
+          }
+          
+          // 如果有密码相关错误
+          if (result.error.password) {
+            if (Array.isArray(result.error.password)) {
+              errors.value.password = result.error.password[0];
+            } else {
+              errors.value.password = result.error.password;
+            }
+          }
+          
+          // 如果没有具体的字段错误，显示通用错误
+          if (!result.error.userName && !result.error.username && !result.error.password && !result.error.general) {
+            errors.value.general = '注册失败，请检查输入信息';
+          }
         } else {
           errors.value = { general: result.error };
         }
+      } else {
+        errors.value = { general: '注册失败，请稍后重试' };
       }
     }
   } catch (error) {
     console.error('注册失败:', error);
-    errors.value = { general: '网络错误，请稍后重试' };
+    
+    errors.value = { general: errorMessage };
+    successMessage.value = '';  // 清除成功消息
   } finally {
     isLoading.value = false;
   }
@@ -145,6 +205,7 @@ const getPasswordStrengthInfo = () => {
                 class="form-input"
                 :class="{ 'error': errors.username }"
                 :disabled="isLoading"
+                @input="clearErrors('username')"
                 required
               />
               <div v-if="errors.username" class="field-error">
@@ -199,6 +260,7 @@ const getPasswordStrengthInfo = () => {
                 class="form-input"
                 :class="{ 'error': errors.confirmPassword }"
                 :disabled="isLoading"
+                @input="clearErrors('confirmPassword')"
                 required
               />
               <div v-if="errors.confirmPassword" class="field-error">
@@ -206,11 +268,21 @@ const getPasswordStrengthInfo = () => {
               </div>
             </div>
 
+            <div v-if="successMessage" class="success-message">
+              <svg class="success-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.035 10.48a.75.75 0 00-1.07 1.04l2.5 2.5a.75.75 0 001.132-.071l3.5-4.898z" clip-rule="evenodd" />
+              </svg>
+              {{ successMessage }}
+            </div>
+
             <div v-if="errors.general" class="error-message">
               <svg class="error-icon" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
               </svg>
-              {{ errors.general }}
+              <div class="error-content">
+                <div class="error-title">注册失败</div>
+                <div class="error-description">{{ errors.general }}</div>
+              </div>
             </div>
 
             <button 
@@ -409,6 +481,7 @@ const getPasswordStrengthInfo = () => {
   font-size: 16px;
   transition: all 0.2s ease;
   background: white;
+  color: #1f2937;           /* 明确设置深灰色文字 */
 }
 
 .form-input:focus {
@@ -457,23 +530,83 @@ const getPasswordStrengthInfo = () => {
   font-weight: 500;
 }
 
-/* 错误信息 */
-.error-message {
+/* 成功消息 */
+.success-message {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fef2f2;
-  color: #dc2626;
+  background: #f0fdf4;
+  color: #15803d;
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #fecaca;
+  border: 1px solid #bbf7d0;
   font-size: 14px;
+  animation: slideInSuccess 0.3s ease-out;
 }
 
-.error-icon {
+.success-icon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+}
+
+@keyframes slideInSuccess {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 错误信息 */
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  font-size: 14px;
+  animation: slideInError 0.3s ease-out;
+}
+
+.error-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.error-description {
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+@keyframes slideInError {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 注册按钮 */
