@@ -49,7 +49,7 @@
       <div class="section-header">
         <h2>一周睡眠趋势</h2>
         <button @click="refreshWeeklyData" class="btn-secondary" :disabled="loading">
-          🔄 刷新
+          刷新
         </button>
       </div>
       <SleepChart :weeklyData="weeklyStats" />
@@ -60,7 +60,7 @@
       <div class="section-header">
         <h2>睡眠记录</h2>
         <button @click="refreshRecords" class="btn-secondary" :disabled="loading">
-          🔄 刷新
+          刷新
         </button>
       </div>
       
@@ -161,23 +161,55 @@
 
     <!-- 删除确认模态框 -->
     <div v-if="deleteConfirm" class="modal-overlay" @click="deleteConfirm = null">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>确认删除</h3>
+      <div class="modal-content delete-modal" @click.stop>
+        <div class="modal-header delete-header">
+          <div class="delete-icon">
+            <span class="warning-icon">⚠️</span>
+          </div>
+          <h3 class="delete-title">确认删除睡眠记录</h3>
           <button @click="deleteConfirm = null" class="modal-close">✕</button>
         </div>
         
-        <div class="modal-body">
-          <p>确定要删除这条睡眠记录吗？</p>
-          <p class="delete-info">
-            日期：{{ formatDate(deleteConfirm.sleep_date) }} | 
-            睡眠时长：{{ deleteConfirm.sleep_duration_hours }}小时
-          </p>
+        <div class="modal-body delete-body">
+          <div class="delete-warning">
+            <p class="delete-message">您确定要删除这条睡眠记录吗？此操作无法撤销。</p>
+          </div>
+          
+          <div class="delete-record-info">
+            <div class="record-detail-card">
+              <div class="detail-row">
+                <span class="detail-label">📅 睡眠日期</span>
+                <span class="detail-value">{{ formatDate(deleteConfirm.sleep_date) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">🛏️ 入睡时间</span>
+                <span class="detail-value">{{ deleteConfirm.bedtime }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">⏰ 起床时间</span>
+                <span class="detail-value">{{ deleteConfirm.wake_time }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">💤 睡眠时长</span>
+                <span class="detail-value highlight">{{ deleteConfirm.sleep_duration_hours }}小时</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">⭐ 质量评分</span>
+                <span class="detail-value quality-badge" :class="getQualityClass(deleteConfirm.sleep_quality_score)">
+                  {{ deleteConfirm.sleep_quality_score }}分
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <div class="form-actions">
-          <button @click="deleteConfirm = null" class="btn-secondary">取消</button>
-          <button @click="confirmDelete" class="btn-danger" :disabled="submitting">
+        <div class="form-actions delete-actions">
+          <button @click="deleteConfirm = null" class="btn-secondary cancel-btn">
+            <span class="btn-icon">↩️</span>
+            取消
+          </button>
+          <button @click="confirmDelete" class="btn-danger delete-btn" :disabled="submitting">
+            <span class="btn-icon">🗑️</span>
             {{ submitting ? '删除中...' : '确认删除' }}
           </button>
         </div>
@@ -445,3 +477,238 @@ function getQualityClass(score) {
   return 'poor';
 }
 </script>
+
+<style scoped>
+.btn-secondary {
+  background: var(--color-gray-100);
+}
+
+/* 删除模态框美化样式 */
+.delete-modal {
+  max-width: 480px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.delete-header {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-bottom: 1px solid #fecaca;
+  padding: 24px;
+  text-align: center;
+  position: relative;
+}
+
+.delete-icon {
+  margin-bottom: 12px;
+}
+
+.warning-icon {
+  font-size: 48px;
+  display: inline-block;
+  animation: warning-pulse 2s infinite;
+}
+
+@keyframes warning-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.delete-title {
+  color: #991b1b;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.delete-body {
+  padding: 24px;
+  background: white;
+}
+
+.delete-warning {
+  text-align: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fef7ff;
+  border: 1px solid #f3e8ff;
+  border-radius: 12px;
+}
+
+.delete-message {
+  color: #6b21a8;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.delete-record-info {
+  margin-top: 20px;
+}
+
+.record-detail-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.detail-value.highlight {
+  color: #0f766e;
+  background: #ccfbf1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.quality-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quality-badge.excellent {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.quality-badge.good {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.quality-badge.fair {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.quality-badge.poor {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.delete-actions {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 20px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  background: white;
+  color: #64748b;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #9ca3af;
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(220, 38, 38, 0.4);
+}
+
+.delete-btn:disabled {
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-icon {
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+/* 按钮加载状态 */
+.delete-btn:disabled .btn-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .delete-modal {
+    max-width: 95vw;
+    margin: 20px;
+  }
+  
+  .delete-header {
+    padding: 20px 16px;
+  }
+  
+  .delete-body {
+    padding: 20px 16px;
+  }
+  
+  .delete-actions {
+    padding: 16px;
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .delete-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .detail-value {
+    font-size: 16px;
+  }
+}
+</style>
