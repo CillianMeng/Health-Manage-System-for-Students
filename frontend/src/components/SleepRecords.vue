@@ -97,8 +97,8 @@
               </span>
             </div>
             <div class="col-actions">
-              <button @click="editRecord(record)" class="btn-edit">✏️</button>
-              <button @click="deleteRecord(record)" class="btn-delete">🗑️</button>
+              <button @click="editRecord(record)" class="btn btn-sm">✏️</button>
+              <button @click="deleteRecord(record)" class="btn btn-sm btn-danger">🗑️</button>
             </div>
           </div>
         </div>

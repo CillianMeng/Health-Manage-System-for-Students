@@ -18,11 +18,8 @@
 
 /* 健康管理组件样式 */
 @import './components/sleep-records.css';
-@import './components/sleep-chart.css';
 @import './components/exercise-records.css';
-@import './components/exercise-chart.css';
 @import './components/diet-records.css';
-@import './components/diet-chart.css';
 @import './components/header.css';
 
 /* 全局应用样式 */

@@ -32,6 +32,8 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  margin-bottom: 32px;
+  width: 100%;
 }
 
 .chart-container {
@@ -41,6 +43,10 @@
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s ease;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .chart-container:hover {
@@ -61,6 +67,8 @@
   width: 100% !important;
   height: 280px !important;
   max-height: 280px;
+  display: block;
+  margin: 0 auto;
 }
 
 .pie-chart {
@@ -79,6 +87,8 @@
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  margin-top: 32px;
 }
 
 .analysis-content {
@@ -183,6 +193,12 @@
   color: #6c757d;
 }
 
+.stat-header {
+  font-size: 14px;
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+
 /* 推荐建议 */
 .recommendations {
   background: #e7f3ff;
@@ -250,6 +266,10 @@
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .chart-section {
+    gap: 20px;
+  }
+  
   .chart-container {
     padding: 16px;
   }
@@ -289,6 +309,10 @@
 }
 
 @media (max-width: 480px) {
+  .chart-section {
+    gap: 16px;
+  }
+  
   .chart-canvas {
     height: 200px !important;
   }

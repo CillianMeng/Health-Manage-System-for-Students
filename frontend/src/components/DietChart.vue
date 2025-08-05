@@ -682,3 +682,7 @@ onMounted(() => {
   })
 })
 </script>
+
+<style scoped>
+@import '../styles/components/diet-chart.css';
+</style>

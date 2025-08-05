@@ -356,3 +356,7 @@ onBeforeUnmount(() => {
   destroyCharts();
 });
 </script>
+
+<style scoped>
+@import '../styles/components/sleep-chart.css';
+</style>

@@ -4,33 +4,34 @@
       <h3>运动数据可视化</h3>
       <p class="chart-description">最近一周的运动数据分析</p>
     </div>
-    
-    <div class="chart-content">
+
       <!-- 趋势图表 -->
       <div class="chart-section">
         <div class="chart-container">
           <h4 class="chart-title">每日运动时长趋势</h4>
           <canvas ref="durationChart" class="chart-canvas"></canvas>
         </div>
-        
+
         <div class="chart-container">
           <h4 class="chart-title">每日卡路里消耗趋势</h4>
           <canvas ref="caloriesChart" class="chart-canvas"></canvas>
         </div>
       </div>
-      
+
       <!-- 运动类型分布 -->
       <div class="chart-section">
         <div class="chart-container">
           <h4 class="chart-title">运动类型分布</h4>
           <canvas ref="typeChart" class="chart-canvas pie-chart"></canvas>
         </div>
-        
-        <!-- 健身分析 -->
+      </div>
+
+      <!-- 健身分析 -->
+      <div class="chart-section">
         <div class="analysis-container">
           <h4 class="chart-title">健身分析</h4>
           <div class="analysis-content">
-            
+
             <!-- 健身评分 -->
             <div class="score-section">
               <div class="score-circle" :style="{ background: getScoreGradient(weeklyData.fitness_score) }">
@@ -41,37 +42,34 @@
                 <p class="score-text">{{ getScoreText(weeklyData.fitness_score) }}</p>
               </div>
             </div>
-            
-            <!-- 运动统计 */
+
+            <!-- 运动统计 -->
             <div class="stats-list">
               <div class="stat-item">
                 <span class="stat-icon">⏱️</span>
                 <div class="stat-info">
-                  <span class="stat-value">{{ weeklyData.total_duration_hours || 0 }}</span>
-                  <span class="stat-unit">小时</span>
-                  <span class="stat-desc">总运动时长</span>
+                  <header class="stat-header">总运动时长</header>
+                  <span class="stat-value">{{ weeklyData.total_duration_hours || 0 }}小时</span>
                 </div>
               </div>
-              
+
               <div class="stat-item">
                 <span class="stat-icon">🔥</span>
                 <div class="stat-info">
-                  <span class="stat-value">{{ weeklyData.total_calories_burned || 0 }}</span>
-                  <span class="stat-unit">卡路里</span>
-                  <span class="stat-desc">总消耗</span>
+                  <header class="stat-header">总卡路里消耗</header>
+                  <span class="stat-value">{{ weeklyData.total_calories_burned || 0 }}卡路里</span>
                 </div>
               </div>
-              
+
               <div class="stat-item">
                 <span class="stat-icon">📊</span>
                 <div class="stat-info">
-                  <span class="stat-value">{{ (weeklyData.records || []).length }}</span>
-                  <span class="stat-unit">次</span>
-                  <span class="stat-desc">运动次数</span>
+                  <header class="stat-header">运动次数</header>
+                  <span class="stat-value">{{ (weeklyData.records || []).length }}次</span>
                 </div>
               </div>
             </div>
-            
+
             <!-- 推荐建议 -->
             <div class="recommendations">
               <h5>💡 健康建议</h5>
@@ -88,7 +86,6 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -170,11 +167,11 @@ const initDurationChart = () => {
     console.error('Duration chart canvas not found');
     return;
   }
-  
+
   const ctx = durationChart.value.getContext('2d');
   const data = getDurationChartData();
   console.log('Duration chart data:', data);
-  
+
   try {
     durationChartInstance = new ChartJS(ctx, {
       type: 'line',
@@ -226,11 +223,11 @@ const initCaloriesChart = () => {
     console.error('Calories chart canvas not found');
     return;
   }
-  
+
   const ctx = caloriesChart.value.getContext('2d');
   const data = getCaloriesChartData();
   console.log('Calories chart data:', data);
-  
+
   try {
     caloriesChartInstance = new ChartJS(ctx, {
       type: 'bar',
@@ -273,11 +270,11 @@ const initTypeChart = () => {
     console.error('Type chart canvas not found');
     return;
   }
-  
+
   const ctx = typeChart.value.getContext('2d');
   const data = getTypeChartData();
   console.log('Type chart data:', data);
-  
+
   try {
     typeChartInstance = new ChartJS(ctx, {
       type: 'doughnut',
@@ -306,28 +303,28 @@ const initTypeChart = () => {
 const getDurationChartData = () => {
   const records = props.weeklyData.records || [];
   console.log('Processing duration chart data for records:', records);
-  
+
   // 获取最近7天的日期
   const days = getLast7Days();
-  
+
   // 按日期汇总运动时长
   const dailyDuration = {};
   days.forEach(day => {
     dailyDuration[day] = 0;
   });
-  
+
   records.forEach(record => {
     const date = record.exercise_date;
     if (dailyDuration.hasOwnProperty(date)) {
       dailyDuration[date] += record.duration_minutes || 0;
     }
   });
-  
+
   const labels = days.map(day => formatDateLabel(day));
   const data = days.map(day => dailyDuration[day]);
-  
+
   console.log('Duration chart - labels:', labels, 'data:', data);
-  
+
   return {
     labels: labels,
     datasets: [{
@@ -344,28 +341,28 @@ const getDurationChartData = () => {
 const getCaloriesChartData = () => {
   const records = props.weeklyData.records || [];
   console.log('Processing calories chart data for records:', records);
-  
+
   // 获取最近7天的日期
   const days = getLast7Days();
-  
+
   // 按日期汇总卡路里消耗
   const dailyCalories = {};
   days.forEach(day => {
     dailyCalories[day] = 0;
   });
-  
+
   records.forEach(record => {
     const date = record.exercise_date;
     if (dailyCalories.hasOwnProperty(date)) {
       dailyCalories[date] += record.calories_burned || 0;
     }
   });
-  
+
   const labels = days.map(day => formatDateLabel(day));
   const data = days.map(day => dailyCalories[day]);
-  
+
   console.log('Calories chart - labels:', labels, 'data:', data);
-  
+
   return {
     labels: labels,
     datasets: [{
@@ -388,25 +385,25 @@ const getCaloriesChartData = () => {
 const getTypeChartData = () => {
   const records = props.weeklyData.records || [];
   console.log('Processing type chart data for records:', records);
-  
+
   // 统计各运动类型的次数
   const typeCount = {};
   records.forEach(record => {
     const type = record.exercise_type_display || record.exercise_type || '未知';
     typeCount[type] = (typeCount[type] || 0) + 1;
   });
-  
+
   let labels = Object.keys(typeCount);
   let data = Object.values(typeCount);
-  
+
   // 如果没有数据，提供默认数据
   if (labels.length === 0) {
     labels = ['暂无数据'];
     data = [1];
   }
-  
+
   console.log('Type chart - labels:', labels, 'data:', data);
-  
+
   const colors = [
     '#FF6384',
     '#36A2EB',
@@ -419,7 +416,7 @@ const getTypeChartData = () => {
     '#FF6384',
     '#36A2EB'
   ];
-  
+
   return {
     labels: labels,
     datasets: [{
@@ -437,12 +434,12 @@ const updateCharts = () => {
     durationChartInstance.data = getDurationChartData();
     durationChartInstance.update();
   }
-  
+
   if (caloriesChartInstance) {
     caloriesChartInstance.data = getCaloriesChartData();
     caloriesChartInstance.update();
   }
-  
+
   if (typeChartInstance) {
     typeChartInstance.data = getTypeChartData();
     typeChartInstance.update();
@@ -488,3 +485,7 @@ const getScoreText = (score) => {
   return '建议制定运动计划';
 };
 </script>
+
+<style scoped>
+@import '../styles/components/exercise-chart.css';
+</style>
