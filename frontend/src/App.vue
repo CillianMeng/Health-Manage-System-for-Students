@@ -95,9 +95,13 @@ const handleNavigate = (route) => {
   <div class="app">
     <!-- 初始化加载状态 -->
     <div v-if="isInitializing" class="loading-container">
-      <div class="loading-spinner">
-        <div class="spinner"></div>
-        <p>正在验证登录状态...</p>
+      <div class="loading-content">
+        <div class="spinner-wrapper">
+          <div class="spinner"></div>
+        </div>
+        <div class="loading-text">
+          <p>正在验证登录状态...</p>
+        </div>
       </div>
     </div>
 
@@ -153,9 +157,17 @@ const handleNavigate = (route) => {
   background: #f7f7f8;
 }
 
-.loading-spinner {
-  text-align: center;
-  color: #666;
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.spinner-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .spinner {
@@ -165,18 +177,21 @@ const handleNavigate = (route) => {
   border-top: 3px solid #007bff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
+}
+
+.loading-text {
+  text-align: center;
+}
+
+.loading-text p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-.loading-spinner p {
-  margin: 0;
-  font-size: 14px;
-  color: #666;
 }
 
 /* 响应式设计 */
@@ -192,7 +207,7 @@ const handleNavigate = (route) => {
     background: #1f2937;
   }
   
-  .loading-spinner p {
+  .loading-text p {
     color: #d1d5db;
   }
   

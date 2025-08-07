@@ -520,6 +520,8 @@ function getQualityClass(score) {
   font-weight: 600;
   margin: 0;
   letter-spacing: -0.025em;
+  text-align: center;
+  width: 100%;
 }
 
 .delete-body {

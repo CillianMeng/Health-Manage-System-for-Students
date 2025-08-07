@@ -17,7 +17,7 @@
 
 .page-header h2 {
   font-size: 28px;
-  color: #2c3e50;
+  color: var(--color-text-primary);
   margin: 0;
   font-weight: 600;
 }
@@ -175,6 +175,11 @@
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e9ecef;
+}
+
+.food-name,
+.food-details {
+  color: #2d3748;
 }
 
 /* 加载状态 */
