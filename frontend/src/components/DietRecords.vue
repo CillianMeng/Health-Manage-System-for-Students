@@ -54,7 +54,7 @@
           清除筛选
         </button>
       </div>
-      
+
       <div class="filters-content">
         <div class="filter-group">
           <label class="filter-label">
@@ -62,22 +62,12 @@
             日期范围
           </label>
           <div class="date-range">
-            <input 
-              v-model="filters.startDate" 
-              type="date" 
-              class="filter-input date-input"
-              placeholder="开始日期"
-            >
+            <input v-model="filters.startDate" type="date" class="filter-input date-input" placeholder="开始日期">
             <span class="date-separator">至</span>
-            <input 
-              v-model="filters.endDate" 
-              type="date" 
-              class="filter-input date-input"
-              placeholder="结束日期"
-            >
+            <input v-model="filters.endDate" type="date" class="filter-input date-input" placeholder="结束日期">
           </div>
         </div>
-        
+
         <div class="filter-group">
           <label class="filter-label">
             <span class="label-icon">🍴</span>
@@ -91,7 +81,7 @@
             <option value="snack">🍎 加餐</option>
           </select>
         </div>
-        
+
         <div class="filter-actions">
           <button @click="applyFilters" class="btn btn-primary filter-apply-btn">
             <span class="btn-icon">🔍</span>
@@ -187,14 +177,8 @@
                 日期
                 <span class="required">*</span>
               </label>
-              <input 
-                id="diet_date" 
-                v-model="form.diet_date" 
-                type="date" 
-                required 
-                :max="today" 
-                class="form-input date-input"
-              >
+              <input id="diet_date" v-model="form.diet_date" type="date" required :max="today"
+                class="form-input date-input">
             </div>
 
             <div class="form-group">
@@ -220,17 +204,8 @@
               <span class="required">*</span>
             </label>
             <div class="food-search-container">
-              <input 
-                id="food_name" 
-                v-model="form.food_name" 
-                type="text" 
-                required 
-                placeholder="搜索食物或手动输入"
-                class="form-input" 
-                @input="searchFood" 
-                @focus="showFoodSuggestions = true" 
-                @blur="hideFoodSuggestions"
-              >
+              <input id="food_name" v-model="form.food_name" type="text" required placeholder="搜索食物或手动输入"
+                class="form-input" @input="searchFood" @focus="showFoodSuggestions = true" @blur="hideFoodSuggestions">
 
               <!-- 食物搜索建议 -->
               <div v-if="showFoodSuggestions && form.food_name.length >= 2" class="food-suggestions">
@@ -258,16 +233,8 @@
                 分量 (克/毫升)
                 <span class="required">*</span>
               </label>
-              <input 
-                id="portion_size" 
-                v-model.number="form.portion_size" 
-                type="number" 
-                required 
-                min="1" 
-                max="2000"
-                placeholder="例如: 150" 
-                class="form-input"
-              >
+              <input id="portion_size" v-model.number="form.portion_size" type="number" required min="1" max="2000"
+                placeholder="例如: 150" class="form-input">
             </div>
 
             <div class="form-group">
@@ -276,16 +243,8 @@
                 每100g卡路里
                 <span class="required">*</span>
               </label>
-              <input 
-                id="calories_per_100g" 
-                v-model.number="form.calories_per_100g" 
-                type="number" 
-                required 
-                min="1"
-                max="900" 
-                placeholder="例如: 54" 
-                class="form-input"
-              >
+              <input id="calories_per_100g" v-model.number="form.calories_per_100g" type="number" required min="1"
+                max="900" placeholder="例如: 54" class="form-input">
             </div>
           </div>
 
@@ -305,13 +264,8 @@
               备注
               <span class="optional">(可选)</span>
             </label>
-            <textarea 
-              id="notes" 
-              v-model="form.notes" 
-              placeholder="可选的备注信息..." 
-              class="form-input form-textarea"
-              rows="3"
-            ></textarea>
+            <textarea id="notes" v-model="form.notes" placeholder="可选的备注信息..." class="form-input form-textarea"
+              rows="3"></textarea>
             <div class="textarea-counter">
               {{ form.notes?.length || 0 }}/200
             </div>
@@ -347,12 +301,12 @@
           <h3 class="delete-title">确认删除饮食记录</h3>
           <button @click="cancelDelete" class="modal-close">✕</button>
         </div>
-        
+
         <div class="modal-body delete-body">
           <div class="delete-warning">
             <p class="delete-message">您确定要删除这条饮食记录吗？此操作无法撤销。</p>
           </div>
-          
+
           <div class="delete-record-info">
             <div class="record-detail-card">
               <div class="detail-row">
@@ -361,7 +315,8 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">🍴 餐次类型</span>
-                <span class="detail-value">{{ getMealIcon(deletingRecord.meal_type) }} {{ getMealTypeName(deletingRecord.meal_type) }}</span>
+                <span class="detail-value">{{ getMealIcon(deletingRecord.meal_type) }} {{
+                  getMealTypeName(deletingRecord.meal_type) }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">🥗 食物名称</span>
@@ -386,7 +341,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="form-actions delete-actions">
           <button @click="cancelDelete" class="btn-secondary cancel-btn">
             <span class="btn-icon">↩️</span>
@@ -450,7 +405,7 @@ const calculatedCalories = computed(() => {
 
 const groupedRecords = computed(() => {
   const groups = {}
-  
+
   records.value.forEach(record => {
     const date = record.diet_date
     if (!groups[date]) {
@@ -461,10 +416,10 @@ const groupedRecords = computed(() => {
         mealGroups: {}
       }
     }
-    
+
     groups[date].records.push(record)
     groups[date].totalCalories += record.total_calories
-    
+
     // 按餐次分组
     const mealType = record.meal_type
     if (!groups[date].mealGroups[mealType]) {
@@ -474,11 +429,11 @@ const groupedRecords = computed(() => {
         totalCalories: 0
       }
     }
-    
+
     groups[date].mealGroups[mealType].records.push(record)
     groups[date].mealGroups[mealType].totalCalories += record.total_calories
   })
-  
+
   // 转换为数组并排序
   return Object.values(groups)
     .map(group => ({
@@ -519,14 +474,14 @@ const formatDate = (dateStr) => {
   const today = new Date()
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  
+
   if (dateStr === today.toISOString().split('T')[0]) {
     return '今天'
   } else if (dateStr === yesterday.toISOString().split('T')[0]) {
     return '昨天'
   } else {
-    return date.toLocaleDateString('zh-CN', { 
-      month: 'long', 
+    return date.toLocaleDateString('zh-CN', {
+      month: 'long',
       day: 'numeric',
       weekday: 'short'
     })
@@ -557,17 +512,17 @@ const getMealTypeName = (mealType) => {
 async function apiCall(url, options = {}) {
   try {
     const response = await tokenAuthService.request(url, options);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     // 如果是204 No Content，直接返回null而不解析JSON
     if (response.status === 204) {
       return null;
     }
-    
+
     // 检查响应是否有内容
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
@@ -590,13 +545,13 @@ async function apiCall(url, options = {}) {
 const loadRecords = async () => {
   try {
     loading.value = true
-    
+
     // 构建查询参数
     const params = new URLSearchParams()
     if (filters.startDate) params.append('start_date', filters.startDate)
     if (filters.endDate) params.append('end_date', filters.endDate)
     if (filters.mealType) params.append('meal_type', filters.mealType)
-    
+
     const url = `/diet-records/${params.toString() ? '?' + params.toString() : ''}`
     const data = await apiCall(url)
     records.value = data.records || []
@@ -622,12 +577,12 @@ const searchFood = async () => {
     foodSuggestions.value = []
     return
   }
-  
+
   try {
     console.log('搜索食物:', form.food_name) // 调试信息
     const data = await apiCall(`/food-calories/?q=${encodeURIComponent(form.food_name)}`)
     console.log('搜索结果:', data) // 调试信息
-    
+
     if (data && data.foods) {
       foodSuggestions.value = data.foods.slice(0, 8) // 限制显示数量
     } else {
@@ -656,7 +611,7 @@ const selectFood = (food) => {
 const submitForm = async () => {
   try {
     submitting.value = true
-    
+
     const formData = {
       diet_date: form.diet_date,
       meal_type: form.meal_type,
@@ -665,7 +620,7 @@ const submitForm = async () => {
       calories_per_100g: form.calories_per_100g,
       notes: form.notes
     }
-    
+
     if (editingRecord.value) {
       await apiCall(`/diet-records/${editingRecord.value.id}/`, {
         method: 'PUT',
@@ -677,7 +632,7 @@ const submitForm = async () => {
         body: JSON.stringify(formData)
       })
     }
-    
+
     closeForm()
     await loadRecords()
     await loadWeeklyStats()
@@ -709,7 +664,7 @@ const confirmDelete = async () => {
     await apiCall(`/diet-records/${deletingRecord.value.id}/`, {
       method: 'DELETE'
     })
-    
+
     deletingRecord.value = null
     await loadRecords()
     await loadWeeklyStats()
@@ -729,12 +684,12 @@ const closeForm = () => {
   showAddForm.value = false
   editingRecord.value = null
   showFoodSuggestions.value = false
-  
+
   // 重置表单
   Object.keys(form).forEach(key => {
     form[key] = ''
   })
-  
+
   // 设置默认日期
   form.diet_date = today.value
 }
@@ -764,18 +719,18 @@ watch([() => form.portion_size, () => form.calories_per_100g], () => {
 onMounted(async () => {
   // 确保认证服务已初始化
   await tokenAuthService.initialize();
-  
+
   // 检查是否已登录
   if (!tokenAuthService.isLoggedIn()) {
     console.warn('用户未登录，无法加载饮食记录');
     alert('请先登录后再访问饮食记录页面');
     return;
   }
-  
+
   form.diet_date = today.value
   loadRecords()
   loadWeeklyStats()
-  
+
   // 添加全局点击事件监听
   document.addEventListener('click', handleClickOutside)
 })
@@ -818,6 +773,7 @@ onMounted(async () => {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -954,7 +910,8 @@ onMounted(async () => {
   background: white;
 }
 
-.date-input, .form-select {
+.date-input,
+.form-select {
   cursor: pointer;
 }
 
@@ -1076,15 +1033,22 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: 2px solid #10b981;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  border-color: #059669;
-  transform: translateY(-1px);
+  background: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .submit-btn {
@@ -1098,7 +1062,8 @@ onMounted(async () => {
   transform: none;
 }
 
-.loading-content, .submit-content {
+.loading-content,
+.submit-content {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1115,8 +1080,13 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-icon {
@@ -1299,37 +1269,37 @@ onMounted(async () => {
     padding: 20px;
     margin-bottom: 20px;
   }
-  
+
   .filters-header {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
   }
-  
+
   .filters-content {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .date-range {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .date-separator {
     display: none;
   }
-  
+
   .filter-input,
   .filter-select {
     min-width: unset;
     width: 100%;
   }
-  
+
   .filter-actions {
     justify-content: stretch;
   }
-  
+
   .filter-apply-btn {
     width: 100%;
     justify-content: center;
@@ -1342,14 +1312,14 @@ onMounted(async () => {
     padding: 10px;
     align-items: flex-start;
   }
-  
+
   .diet-modal {
     max-width: 100%;
     max-height: 95vh;
     margin-top: 10px;
     border-radius: 16px;
   }
-  
+
   .diet-header {
     padding: 20px;
     flex-direction: column;
@@ -1357,28 +1327,28 @@ onMounted(async () => {
     gap: 12px;
     flex-shrink: 0;
   }
-  
+
   .header-text {
     order: 1;
   }
-  
+
   .modal-close-btn {
     position: absolute;
     top: 16px;
     right: 16px;
   }
-  
+
   .diet-form {
     padding: 20px;
     max-height: calc(95vh - 120px);
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 16px;
     margin-bottom: 16px;
   }
-  
+
   .form-actions {
     flex-direction: column;
     gap: 12px;
@@ -1386,7 +1356,7 @@ onMounted(async () => {
     padding-top: 20px;
     flex-shrink: 0;
   }
-  
+
   .form-actions .btn {
     width: 100%;
   }
@@ -1421,8 +1391,15 @@ onMounted(async () => {
 }
 
 @keyframes warning-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .delete-title {
@@ -1605,65 +1582,65 @@ onMounted(async () => {
   .diet-form {
     background: #1f2937;
   }
-  
+
   .form-label {
     color: #f3f4f6;
   }
-  
+
   .form-input {
     background: #374151;
     border-color: #4b5563;
     color: #f3f4f6;
   }
-  
+
   .form-input:focus {
     background: #4b5563;
     border-color: #10b981;
   }
-  
+
   .form-input:hover:not(:focus) {
     background: #4b5563;
     border-color: #6b7280;
   }
-  
+
   .food-suggestions {
     background: #374151;
     border-color: #4b5563;
   }
-  
+
   .suggestion-item {
     border-bottom-color: #4b5563;
   }
-  
+
   .suggestion-item:hover {
     background: #4b5563;
   }
-  
+
   .suggestion-name {
     color: #f3f4f6;
   }
-  
+
   .suggestion-category {
     color: #9ca3af;
   }
-  
+
   .calculated-calories {
     background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
     border-color: #10b981;
     color: #6ee7b7;
   }
-  
+
   .textarea-counter {
     color: #9ca3af;
   }
-  
+
   /* 只在添加/编辑表单中应用深色模式的按钮样式 */
   .diet-form .btn-secondary {
     background: #374151;
     color: #f3f4f6;
     border-color: #4b5563;
   }
-  
+
   .diet-form .btn-secondary:hover {
     background: #4b5563;
     border-color: #6b7280;

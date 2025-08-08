@@ -5,7 +5,7 @@
       <h1 class="page-title">睡眠记录管理</h1>
       <button @click="showAddForm = true" class="btn-primary">
         <span class="btn-icon">➕</span>
-        添加记录
+        添加睡眠记录
       </button>
     </div>
 
@@ -40,6 +40,38 @@
         <div class="stat-content">
           <h3 class="stat-number">{{ weeklyStats.sleep_regularity || '暂无' }}</h3>
           <p class="stat-label">睡眠规律</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 睡眠时间分析 -->
+    <div v-if="weeklyStats.bedtime_analysis && weeklyStats.bedtime_analysis.average_bedtime" class="bedtime-analysis">
+      <div class="section-header">
+        <h2>💤 睡眠时间分析</h2>
+      </div>
+      
+      <div class="bedtime-overview">
+        <div class="bedtime-card">
+          <div class="bedtime-main">
+            <div class="bedtime-time">{{ weeklyStats.bedtime_analysis.average_bedtime }}</div>
+            <div class="bedtime-label">平均入睡时间</div>
+          </div>
+          <div class="bedtime-category" :class="getBedtimeCategoryClass(weeklyStats.bedtime_analysis.bedtime_category)">
+            {{ weeklyStats.bedtime_analysis.bedtime_category }}
+          </div>
+        </div>
+      </div>
+
+      <div v-if="weeklyStats.bedtime_analysis.recommendations && weeklyStats.bedtime_analysis.recommendations.length > 0" 
+           class="bedtime-recommendations">
+        <h3>🎯 个性化建议</h3>
+        <div class="recommendations-list">
+          <div v-for="(recommendation, index) in weeklyStats.bedtime_analysis.recommendations" 
+               :key="index" 
+               class="recommendation-item"
+               :class="getRecommendationClass(recommendation)">
+            {{ recommendation }}
+          </div>
         </div>
       </div>
     </div>
@@ -476,6 +508,38 @@ function getQualityClass(score) {
   if (score >= 60) return 'fair';
   return 'poor';
 }
+
+// 获取入睡时间类别样式类
+function getBedtimeCategoryClass(category) {
+  switch (category) {
+    case '早睡型':
+      return 'category-excellent';
+    case '理想型':
+      return 'category-good';
+    case '稍晚型':
+      return 'category-warning';
+    case '晚睡型':
+      return 'category-danger';
+    case '极晚型':
+      return 'category-critical';
+    default:
+      return 'category-default';
+  }
+}
+
+// 获取建议样式类
+function getRecommendationClass(recommendation) {
+  if (recommendation.includes('✨') || recommendation.includes('👍')) {
+    return 'recommendation-positive';
+  } else if (recommendation.includes('⚠️') || recommendation.includes('📅')) {
+    return 'recommendation-warning';
+  } else if (recommendation.includes('🚨') || recommendation.includes('❌')) {
+    return 'recommendation-danger';
+  } else if (recommendation.includes('🎯') || recommendation.includes('📊')) {
+    return 'recommendation-info';
+  }
+  return 'recommendation-default';
+}
 </script>
 
 <style scoped>
@@ -711,6 +775,197 @@ function getQualityClass(score) {
   
   .detail-value {
     font-size: 16px;
+  }
+}
+
+/* 睡眠时间分析样式 */
+.bedtime-analysis {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f1f5f9;
+}
+
+.bedtime-overview {
+  margin-bottom: 24px;
+}
+
+.bedtime-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.bedtime-main {
+  flex: 1;
+}
+
+.bedtime-time {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.bedtime-label {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.bedtime-category {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 入睡时间类别样式 */
+.category-excellent {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+.category-good {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+}
+
+.category-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+
+.category-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+}
+
+.category-critical {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
+}
+
+.category-default {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+}
+
+/* 建议部分样式 */
+.bedtime-recommendations {
+  margin-top: 24px;
+}
+
+.bedtime-recommendations h3 {
+  color: #1e293b;
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommendation-item {
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  border-left: 4px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendation-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.05;
+  border-radius: 12px;
+  z-index: -1;
+}
+
+/* 建议类型样式 */
+.recommendation-positive {
+  background: #f0fdf4;
+  border-left-color: #22c55e;
+  color: #166534;
+}
+
+.recommendation-positive::before {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.recommendation-warning {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+  color: #92400e;
+}
+
+.recommendation-warning::before {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.recommendation-danger {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+  color: #991b1b;
+}
+
+.recommendation-danger::before {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.recommendation-info {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+  color: #1e40af;
+}
+
+.recommendation-info::before {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.recommendation-default {
+  background: #f8fafc;
+  border-left-color: #64748b;
+  color: #334155;
+}
+
+.recommendation-default::before {
+  background: linear-gradient(135deg, #64748b, #475569);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .bedtime-analysis {
+    margin: 16px 0;
+    padding: 20px;
+  }
+  
+  .bedtime-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .bedtime-time {
+    font-size: 2rem;
+  }
+  
+  .recommendation-item {
+    padding: 14px 16px;
+    font-size: 0.9rem;
   }
 }
 </style>

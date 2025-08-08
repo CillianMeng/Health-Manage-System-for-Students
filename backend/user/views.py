@@ -403,8 +403,12 @@ class WeeklySleepStatsView(APIView):
             # 睡眠规律性分析
             regularity = self._analyze_sleep_regularity(records)
             
+            # 睡眠时间分析和提示
+            bedtime_analysis = self._analyze_bedtime_patterns(records)
+            
             # 生成建议
             recommendations = self._generate_recommendations(avg_hours, avg_quality, len(records))
+            recommendations.extend(bedtime_analysis['recommendations'])
         else:
             avg_duration = 0
             avg_hours = 0
@@ -420,6 +424,7 @@ class WeeklySleepStatsView(APIView):
             'average_quality_score': round(avg_quality, 1),
             'total_records': records.count(),
             'sleep_regularity': regularity,
+            'bedtime_analysis': bedtime_analysis if 'bedtime_analysis' in locals() else {},
             'recommendations': recommendations
         }
         
@@ -476,6 +481,113 @@ class WeeklySleepStatsView(APIView):
             recommendations.append("建议坚持记录睡眠数据，以便更好地分析睡眠模式")
         
         return recommendations if recommendations else ["您的睡眠状况良好，继续保持"]
+
+    def _analyze_bedtime_patterns(self, records):
+        """
+        分析睡眠时间模式并生成个性化提示
+        """
+        if len(records) < 3:
+            return {
+                'average_bedtime': None,
+                'bedtime_category': '数据不足',
+                'recommendations': ['需要更多睡眠数据来分析您的睡眠模式']
+            }
+        
+        # 计算平均入睡时间
+        bedtime_minutes = []
+        for record in records:
+            # 将时间转换为分钟数，处理跨日情况
+            minutes = record.bedtime.hour * 60 + record.bedtime.minute
+            
+            # 如果是凌晨时间（0-6点），加上24小时处理跨日
+            if record.bedtime.hour < 6:
+                minutes += 24 * 60
+                
+            bedtime_minutes.append(minutes)
+        
+        avg_bedtime_minutes = sum(bedtime_minutes) / len(bedtime_minutes)
+        
+        # 转换回正常时间格式
+        if avg_bedtime_minutes >= 24 * 60:
+            avg_bedtime_minutes -= 24 * 60
+            
+        avg_hour = int(avg_bedtime_minutes // 60)
+        avg_minute = int(avg_bedtime_minutes % 60)
+        
+        # 格式化平均入睡时间
+        avg_bedtime_str = f"{avg_hour:02d}:{avg_minute:02d}"
+        
+        # 分析入睡时间类别和生成建议
+        recommendations = []
+        
+        if avg_bedtime_minutes <= 22 * 60 + 30:  # 22:30之前
+            bedtime_category = "早睡型"
+            recommendations.append("✨ 您的入睡时间很健康！早睡早起身体好，继续保持这个好习惯。")
+            
+        elif avg_bedtime_minutes <= 23 * 60 + 30:  # 23:30之前
+            bedtime_category = "理想型"
+            recommendations.append("👍 您的入睡时间在理想范围内，这有利于获得充足的睡眠。")
+            
+        elif avg_bedtime_minutes <= 24 * 60 + 30:  # 0:30之前
+            bedtime_category = "稍晚型"
+            recommendations.append("⚠️ 您的平均入睡时间稍晚，建议逐步调整到23:30之前睡觉。")
+            recommendations.append("💡 尝试在睡前1小时关闭电子设备，有助于提高睡眠质量。")
+            
+        elif avg_bedtime_minutes <= 1 * 60 + 30:  # 1:30之前
+            bedtime_category = "晚睡型"
+            recommendations.append("🚨 您经常在12点后才入睡，这可能影响睡眠质量和身体健康。")
+            recommendations.append("📅 建议制定固定的睡前例程，逐步将入睡时间提前到23:00左右。")
+            recommendations.append("🧘 睡前可以尝试冥想、阅读或轻音乐来帮助放松。")
+            
+        else:  # 1:30之后
+            bedtime_category = "极晚型"
+            recommendations.append("❌ 您的入睡时间过晚，严重影响睡眠质量！")
+            recommendations.append("🏥 长期熬夜可能导致免疫力下降、记忆力减退等健康问题。")
+            recommendations.append("📋 强烈建议调整作息：设定固定睡觉时间，避免睡前使用手机。")
+            recommendations.append("☕ 下午3点后避免咖啡因摄入，晚餐后避免剧烈运动。")
+        
+        # 分析入睡时间一致性
+        if len(bedtime_minutes) >= 5:
+            # 计算标准差
+            variance = sum((x - avg_bedtime_minutes) ** 2 for x in bedtime_minutes) / len(bedtime_minutes)
+            std_dev_minutes = variance ** 0.5
+            
+            if std_dev_minutes < 30:
+                recommendations.append("🎯 您的入睡时间很规律，这对维持良好的生物钟很重要。")
+            elif std_dev_minutes < 60:
+                recommendations.append("📊 您的入睡时间比较规律，可以尝试进一步固定睡觉时间。")
+            else:
+                recommendations.append("📈 您的入睡时间变化较大，建议培养固定的睡前习惯。")
+        
+        # 周末vs工作日分析（如果有足够数据）
+        if len(records) >= 7:
+            weekday_bedtimes = []
+            weekend_bedtimes = []
+            
+            for record in records:
+                weekday = record.sleep_date.weekday()  # 0=周一, 6=周日
+                minutes = record.bedtime.hour * 60 + record.bedtime.minute
+                if record.bedtime.hour < 6:
+                    minutes += 24 * 60
+                    
+                if weekday < 5:  # 工作日
+                    weekday_bedtimes.append(minutes)
+                else:  # 周末
+                    weekend_bedtimes.append(minutes)
+            
+            if weekday_bedtimes and weekend_bedtimes:
+                avg_weekday = sum(weekday_bedtimes) / len(weekday_bedtimes)
+                avg_weekend = sum(weekend_bedtimes) / len(weekend_bedtimes)
+                diff_minutes = abs(avg_weekend - avg_weekday)
+                
+                if diff_minutes > 60:
+                    recommendations.append("📅 您的工作日和周末入睡时间差异较大，建议保持一致的作息时间。")
+        
+        return {
+            'average_bedtime': avg_bedtime_str,
+            'bedtime_category': bedtime_category,
+            'recommendations': recommendations
+        }
 
 
 class ExerciseRecordView(APIView):
