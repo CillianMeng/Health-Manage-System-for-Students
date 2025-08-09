@@ -6,7 +6,7 @@
       <p class="page-description">记录每日运动情况，追踪健身进度</p>
 
       <button @click="showAddForm = true" class="btn btn-primary">
-        <span class="btn-icon">➕</span>
+        <span class="btn-icon">+</span>
         添加运动记录
       </button>
     </div>
@@ -182,7 +182,7 @@
                 class="form-input form-select"
               >
                 <option value="" disabled>请选择运动类型</option>
-                <option v-for="type in exerciseTypes" :key="type.value" :value="type.value">
+                <option v-for="type in exerciseTypes" :key="type.value" :value="type.value" :style="{ color: 'black' }">
                   {{ type.icon }} {{ type.label }}
                 </option>
               </select>
@@ -254,7 +254,7 @@
                 保存中...
               </span>
               <span v-else class="submit-content">
-                <span class="btn-icon">{{ showAddForm ? '➕' : '💾' }}</span>
+                <span class="btn-icon">{{ showAddForm ? '+' : '💾' }}</span>
                 {{ showAddForm ? '添加记录' : '保存修改' }}
               </span>
             </button>
@@ -489,8 +489,6 @@ const saveRecord = async () => {
         body: JSON.stringify(recordData)
       });
     }
-    
-    alert(showAddForm.value ? '运动记录添加成功！' : '运动记录更新成功！');
     closeModal();
     await loadExerciseRecords();
     await loadWeeklyStats();
@@ -524,7 +522,6 @@ const confirmDelete = async () => {
       method: 'DELETE'
     });
     
-    alert('运动记录删除成功！');
     closeDeleteModal();
     await loadExerciseRecords();
     await loadWeeklyStats();
@@ -721,6 +718,11 @@ const getIntensityClass = (intensity) => {
   font-size: 14px;
   transition: all 0.2s ease;
   background: #fafafa;
+  color: black;
+}
+
+.form-input::placeholder {
+  color: #999;
 }
 
 .form-input:focus {
@@ -738,6 +740,7 @@ const getIntensityClass = (intensity) => {
 
 .date-input, .form-select {
   cursor: pointer;
+  color: black
 }
 
 .form-select {
@@ -747,6 +750,15 @@ const getIntensityClass = (intensity) => {
   background-repeat: no-repeat;
   background-size: 16px;
   padding-right: 40px;
+}
+
+.form-select:has(option[value=""]:checked) {
+  color: #999;
+}
+
+.form-select
+option[value=""] {
+  color: #999;
 }
 
 .duration-group {
@@ -920,41 +932,6 @@ const getIntensityClass = (intensity) => {
   
   .form-actions .btn {
     width: 100%;
-  }
-}
-
-/* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
-  .exercise-form {
-    background: #1f2937;
-  }
-  
-  .form-label {
-    color: #f3f4f6;
-  }
-  
-  .form-input {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
-  
-  .form-input:focus {
-    background: #4b5563;
-    border-color: #60a5fa;
-  }
-  
-  .quick-duration {
-    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-    border-color: #6b7280;
-  }
-  
-  .quick-label {
-    color: #d1d5db;
-  }
-  
-  .textarea-counter {
-    color: #9ca3af;
   }
 }
 
@@ -1149,22 +1126,26 @@ const getIntensityClass = (intensity) => {
 }
 
 .modal-close {
-  background: none;
+  background: rgba(153, 27, 27, 0.1);
   border: none;
-  font-size: 20px;
+  color: #991b1b;
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   cursor: pointer;
-  color: #718096;
-  padding: 4px;
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #2d3748;
+  background: rgba(153, 27, 27, 0.2);
+  transform: scale(1.1);
 }
 
 /* 按钮加载状态 */

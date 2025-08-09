@@ -254,12 +254,26 @@
 }
 
 .modal-close {
-  background: none;
+  background: rgba(153, 27, 27, 0.1);
   border: none;
-  font-size: 20px;
+  color: #991b1b;
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   cursor: pointer;
-  color: #718096;
-  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.modal-close:hover {
+  background: rgba(153, 27, 27, 0.2);
+  transform: scale(1.1);
 }
 
 .modal-body {

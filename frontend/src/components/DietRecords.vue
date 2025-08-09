@@ -62,9 +62,9 @@
             日期范围
           </label>
           <div class="date-range">
-            <input v-model="filters.startDate" type="date" class="filter-input date-input" placeholder="开始日期">
+            <input v-model="filters.startDate" type="date" class="filter-input" placeholder="开始日期">
             <span class="date-separator">至</span>
-            <input v-model="filters.endDate" type="date" class="filter-input date-input" placeholder="结束日期">
+            <input v-model="filters.endDate" type="date" class="filter-input" placeholder="结束日期">
           </div>
         </div>
 
@@ -282,7 +282,7 @@
                 保存中...
               </span>
               <span v-else class="submit-content">
-                <span class="btn-icon">{{ editingRecord ? '💾' : '➕' }}</span>
+                <span class="btn-icon">{{ editingRecord ? '💾' : '+' }}</span>
                 {{ submitting ? '保存中...' : (editingRecord ? '更新' : '添加') }}
               </span>
             </button>
@@ -913,6 +913,7 @@ onMounted(async () => {
 .date-input,
 .form-select {
   cursor: pointer;
+  color: black;
 }
 
 .form-select {
@@ -922,6 +923,19 @@ onMounted(async () => {
   background-repeat: no-repeat;
   background-size: 16px;
   padding-right: 40px;
+}
+
+.form-select 
+option[value="breakfast"],
+option[value="lunch"],
+option[value="dinner"],
+option[value="snack"]
+ {
+  color: black;
+}
+
+.form-select:has(option[value=""]:checked) {
+  color: #999;
 }
 
 .food-search-container {
@@ -998,6 +1012,7 @@ onMounted(async () => {
   min-height: 80px;
   font-family: inherit;
   line-height: 1.5;
+  color: black;
 }
 
 .textarea-counter {
@@ -1090,6 +1105,12 @@ onMounted(async () => {
 }
 
 .btn-icon {
+  font-size: 14px;
+}
+
+.record-notes {
+  color: black;
+  font-weight: 500;
   font-size: 14px;
 }
 
@@ -1575,75 +1596,5 @@ onMounted(async () => {
   cursor: not-allowed;
   transform: none;
   color: white;
-}
-
-/* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
-  .diet-form {
-    background: #1f2937;
-  }
-
-  .form-label {
-    color: #f3f4f6;
-  }
-
-  .form-input {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
-
-  .form-input:focus {
-    background: #4b5563;
-    border-color: #10b981;
-  }
-
-  .form-input:hover:not(:focus) {
-    background: #4b5563;
-    border-color: #6b7280;
-  }
-
-  .food-suggestions {
-    background: #374151;
-    border-color: #4b5563;
-  }
-
-  .suggestion-item {
-    border-bottom-color: #4b5563;
-  }
-
-  .suggestion-item:hover {
-    background: #4b5563;
-  }
-
-  .suggestion-name {
-    color: #f3f4f6;
-  }
-
-  .suggestion-category {
-    color: #9ca3af;
-  }
-
-  .calculated-calories {
-    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
-    border-color: #10b981;
-    color: #6ee7b7;
-  }
-
-  .textarea-counter {
-    color: #9ca3af;
-  }
-
-  /* 只在添加/编辑表单中应用深色模式的按钮样式 */
-  .diet-form .btn-secondary {
-    background: #374151;
-    color: #f3f4f6;
-    border-color: #4b5563;
-  }
-
-  .diet-form .btn-secondary:hover {
-    background: #4b5563;
-    border-color: #6b7280;
-  }
 }
 </style>

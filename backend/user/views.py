@@ -9,8 +9,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import Http404
-from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer, ExerciseRecordSerializer, WeeklyExerciseStatsSerializer, DietRecordSerializer, WeeklyDietStatsSerializer, FoodCalorieReferenceSerializer, HealthReportSerializer, HealthReportListSerializer, HealthReportGenerateSerializer, HealthReportStatisticsSerializer
-from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference, HealthReport
+from .serializers import LoginSerializer, SleepRecordSerializer, WeeklySleepStatsSerializer, ExerciseRecordSerializer, \
+    WeeklyExerciseStatsSerializer, DietRecordSerializer, WeeklyDietStatsSerializer, FoodCalorieReferenceSerializer, \
+    HealthReportSerializer, HealthReportListSerializer, HealthReportGenerateSerializer, \
+    HealthReportStatisticsSerializer, HealthGoalSerializer, HealthGoalCreateSerializer, GoalProgressSerializer
+from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference, HealthReport, HealthGoal, \
+    GoalProgress
 from .utils import (
     set_user_password, 
     create_user_session, 
@@ -1764,3 +1768,295 @@ class HealthReportStatisticsView(APIView):
                 'success': False,
                 'message': f'获取健康报告统计时发生错误: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class HealthGoalView(APIView):
+    """
+    健康目标视图
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户的健康目标列表"""
+        user = request.user
+        
+        # 获取查询参数
+        status_filter = request.query_params.get('status', None)
+        goal_type = request.query_params.get('type', None)
+        
+        # 构建查询条件
+        queryset = HealthGoal.objects.filter(user=user)
+        
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        if goal_type:
+            queryset = queryset.filter(goal_type=goal_type)
+        
+        # 序列化数据
+        serializer = HealthGoalSerializer(queryset, many=True)
+        
+        return Response({
+            'success': True,
+            'goals': serializer.data,
+            'total': queryset.count()
+        }, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """创建新的健康目标"""
+        serializer = HealthGoalCreateSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            # 保存目标并关联用户
+            goal = serializer.save(user=request.user)
+            
+            # 返回完整的目标信息
+            goal_serializer = HealthGoalSerializer(goal)
+            
+            return Response({
+                'success': True,
+                'message': '健康目标创建成功',
+                'goal': goal_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'success': False,
+            'message': '创建健康目标失败',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HealthGoalDetailView(APIView):
+    """
+    健康目标详情视图
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get_object(self, pk, user):
+        """获取目标对象"""
+        try:
+            return HealthGoal.objects.get(pk=pk, user=user)
+        except HealthGoal.DoesNotExist:
+            return None
+    
+    def get(self, request, pk):
+        """获取单个健康目标详情"""
+        user = request.user
+        goal = self.get_object(pk, user)
+        
+        if not goal:
+            return Response({
+                'success': False,
+                'message': '目标不存在'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = HealthGoalSerializer(goal)
+        return Response({
+            'success': True,
+            'goal': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    def put(self, request, pk):
+        """更新健康目标"""
+        user = request.user
+        goal = self.get_object(pk, user)
+        
+        if not goal:
+            return Response({
+                'success': False,
+                'message': '目标不存在'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = HealthGoalCreateSerializer(goal, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            updated_goal = serializer.save()
+            goal_serializer = HealthGoalSerializer(updated_goal)
+            
+            return Response({
+                'success': True,
+                'message': '健康目标更新成功',
+                'goal': goal_serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'success': False,
+            'message': '更新健康目标失败',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        """删除健康目标"""
+        user = request.user
+        goal = self.get_object(pk, user)
+        
+        if not goal:
+            return Response({
+                'success': False,
+                'message': '目标不存在'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        goal.delete()
+        
+        return Response({
+            'success': True,
+            'message': '健康目标删除成功'
+        }, status=status.HTTP_200_OK)
+
+
+class HealthGoalProgressView(APIView):
+    """
+    健康目标进度视图
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get_goal(self, goal_id, user):
+        """获取目标对象"""
+        try:
+            return HealthGoal.objects.get(pk=goal_id, user=user)
+        except HealthGoal.DoesNotExist:
+            return None
+    
+    def post(self, request, goal_id):
+        """更新目标进度"""
+        user = request.user
+        goal = self.get_goal(goal_id, user)
+        
+        if not goal:
+            return Response({
+                'success': False,
+                'message': '目标不存在'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # 获取提交的数据
+        value = request.data.get('value')
+        notes = request.data.get('notes', '')
+        progress_date = request.data.get('date', date.today())
+        
+        if value is None:
+            return Response({
+                'success': False,
+                'message': '请提供进度数值'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            value = float(value)
+            if value < 0:
+                return Response({
+                    'success': False,
+                    'message': '进度数值不能为负数'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, TypeError):
+            return Response({
+                'success': False,
+                'message': '进度数值格式不正确'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 解析日期
+        if isinstance(progress_date, str):
+            try:
+                progress_date = datetime.strptime(progress_date, '%Y-%m-%d').date()
+            except ValueError:
+                progress_date = date.today()
+        
+        # 创建或更新进度记录
+        progress_record, created = GoalProgress.objects.update_or_create(
+            goal=goal,
+            date=progress_date,
+            defaults={
+                'value': value,
+                'notes': notes
+            }
+        )
+        
+        # 更新目标的当前数值
+        goal.update_current_value(value)
+        
+        # 返回更新后的目标信息
+        goal_serializer = HealthGoalSerializer(goal)
+        progress_serializer = GoalProgressSerializer(progress_record)
+        
+        return Response({
+            'success': True,
+            'message': '进度更新成功',
+            'goal': goal_serializer.data,
+            'progress_record': progress_serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class HealthGoalStatsView(APIView):
+    """
+    健康目标统计视图
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTokenAuthenticated]
+    
+    def get(self, request):
+        """获取用户的健康目标统计"""
+        user = request.user
+        
+        # 获取所有目标
+        all_goals = HealthGoal.objects.filter(user=user)
+        total_goals = all_goals.count()
+        
+        if total_goals == 0:
+            return Response({
+                'success': True,
+                'stats': {
+                    'total_goals': 0,
+                    'active_goals': 0,
+                    'completed_goals': 0,
+                    'completion_rate': 0,
+                    'average_progress': 0,
+                    'goals_by_type': {},
+                    'recent_achievements': []
+                }
+            }, status=status.HTTP_200_OK)
+        
+        # 按状态统计
+        active_goals = all_goals.filter(status='active').count()
+        completed_goals = all_goals.filter(status='completed').count()
+        
+        # 计算完成率
+        completion_rate = (completed_goals / total_goals) * 100 if total_goals > 0 else 0
+        
+        # 计算平均进度
+        active_goal_objects = all_goals.filter(status='active')
+        if active_goal_objects.exists():
+            total_progress = sum(goal.progress_percentage for goal in active_goal_objects)
+            average_progress = total_progress / active_goal_objects.count()
+        else:
+            average_progress = 0
+        
+        # 按类型统计
+        goals_by_type = {}
+        for goal_type, _ in HealthGoal.GOAL_TYPES:
+            count = all_goals.filter(goal_type=goal_type).count()
+            if count > 0:
+                goals_by_type[goal_type] = count
+        
+        # 最近完成的目标
+        recent_achievements = all_goals.filter(
+            status='completed',
+            updated_at__gte=date.today() - timedelta(days=30)
+        ).order_by('-updated_at')[:5]
+        
+        recent_achievements_data = HealthGoalSerializer(recent_achievements, many=True).data
+        
+        stats_data = {
+            'total_goals': total_goals,
+            'active_goals': active_goals,
+            'completed_goals': completed_goals,
+            'completion_rate': round(completion_rate, 1),
+            'average_progress': round(average_progress, 1),
+            'goals_by_type': goals_by_type,
+            'recent_achievements': recent_achievements_data
+        }
+        
+        return Response({
+            'success': True,
+            'stats': stats_data
+        }, status=status.HTTP_200_OK)

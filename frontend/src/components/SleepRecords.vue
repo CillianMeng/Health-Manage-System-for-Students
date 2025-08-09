@@ -4,7 +4,7 @@
     <div class="page-header">
       <h1 class="page-title">睡眠记录管理</h1>
       <button @click="showAddForm = true" class="btn-primary">
-        <span class="btn-icon">➕</span>
+        <span class="btn-icon">+</span>
         添加睡眠记录
       </button>
     </div>

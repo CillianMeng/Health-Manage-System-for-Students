@@ -37,6 +37,12 @@
                 <span class="nav-text">饮食记录</span>
               </a>
             </li>
+            <li class="nav-item" :class="{ active: currentView === 'health-goals' }">
+              <a href="#" @click.prevent="setCurrentView('health-goals')" class="nav-link">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-text">健康目标</span>
+              </a>
+            </li>
           </ul>
         </div>
         
@@ -240,6 +246,10 @@
                     <span class="action-icon">🍽️</span>
                     <span class="action-text">饮食记录</span>
                   </button>
+                  <button @click="setCurrentView('health-goals')" class="quick-action-btn">
+                    <span class="action-icon">🎯</span>
+                    <span class="action-text">健康目标</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -260,6 +270,11 @@
         <div v-else-if="currentView === 'diet'">
           <DietRecords />
         </div>
+        
+        <!-- 健康目标视图 -->
+        <div v-else-if="currentView === 'health-goals'">
+          <HealthGoals />
+        </div>
       </div>
     </main>
   </div>
@@ -270,6 +285,7 @@ import { ref, onMounted } from 'vue';
 import SleepRecords from './SleepRecords.vue';
 import ExerciseRecords from './ExerciseRecords.vue';
 import DietRecords from './DietRecords.vue';
+import HealthGoals from './HealthGoals.vue';
 
 const props = defineProps({
   currentUser: {
@@ -299,7 +315,8 @@ const getPageTitle = () => {
     'health-report': '健康报告',
     sleep: '睡眠记录',
     exercise: '运动记录',
-    diet: '饮食记录'
+    diet: '饮食记录',
+    'health-goals': '健康目标'
   };
   return titles[currentView.value] || '健康报告';
 };

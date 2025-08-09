@@ -346,3 +346,153 @@ class HealthReport(models.Model):
     
     def __str__(self):
         return f"{self.user.userName} - {self.get_period_display()} - {self.overall_score}分"
+
+
+class HealthGoal(models.Model):
+    """健康目标模型"""
+    GOAL_TYPES = [
+        ('sleep', '睡眠目标'),
+        ('exercise', '运动目标'),
+        ('diet', '饮食目标'),
+        ('weight', '体重目标'),
+        ('custom', '自定义目标'),
+    ]
+    
+    GOAL_STATUS = [
+        ('active', '进行中'),
+        ('completed', '已完成'),
+        ('paused', '已暂停'),
+        ('cancelled', '已取消'),
+    ]
+    
+    FREQUENCY_CHOICES = [
+        ('daily', '每日'),
+        ('weekly', '每周'),
+        ('monthly', '每月'),
+        ('total', '总计'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_goals')
+    goal_type = models.CharField(max_length=20, choices=GOAL_TYPES, help_text="目标类型")
+    title = models.CharField(max_length=100, help_text="目标标题")
+    description = models.TextField(blank=True, help_text="目标描述")
+    
+    # 目标数值
+    target_value = models.FloatField(help_text="目标数值")
+    current_value = models.FloatField(default=0, help_text="当前数值")
+    unit = models.CharField(max_length=20, help_text="单位（如：小时、次、公斤等）")
+    
+    # 时间设置
+    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, help_text="完成频率")
+    start_date = models.DateField(help_text="开始日期")
+    end_date = models.DateField(help_text="结束日期")
+    
+    # 状态和进度
+    status = models.CharField(max_length=20, choices=GOAL_STATUS, default='active', help_text="目标状态")
+    progress_percentage = models.FloatField(default=0, help_text="完成百分比")
+    
+    # 提醒设置
+    reminder_enabled = models.BooleanField(default=True, help_text="是否启用提醒")
+    reminder_time = models.TimeField(null=True, blank=True, help_text="提醒时间")
+    
+    # 时间戳
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "健康目标"
+        verbose_name_plural = "健康目标"
+    
+    def save(self, *args, **kwargs):
+        """保存时自动计算进度百分比"""
+        self.calculate_progress()
+        super().save(*args, **kwargs)
+    
+    def calculate_progress(self):
+        """计算完成进度"""
+        if self.target_value > 0:
+            self.progress_percentage = min(100, (self.current_value / self.target_value) * 100)
+        else:
+            self.progress_percentage = 0
+    
+    def update_current_value(self, value):
+        """更新当前数值"""
+        self.current_value = value
+        self.calculate_progress()
+        
+        # 检查是否完成目标
+        if self.progress_percentage >= 100 and self.status == 'active':
+            self.status = 'completed'
+        
+        self.save()
+    
+    def get_progress_color(self):
+        """根据进度返回颜色"""
+        if self.progress_percentage >= 100:
+            return '#22c55e'  # 绿色 - 已完成
+        elif self.progress_percentage >= 75:
+            return '#3b82f6'  # 蓝色 - 接近完成
+        elif self.progress_percentage >= 50:
+            return '#f59e0b'  # 橙色 - 进行中
+        elif self.progress_percentage >= 25:
+            return '#ef4444'  # 红色 - 需努力
+        else:
+            return '#6b7280'  # 灰色 - 刚开始
+    
+    def get_status_display_color(self):
+        """返回状态对应的颜色"""
+        color_map = {
+            'active': '#3b82f6',
+            'completed': '#22c55e',
+            'paused': '#f59e0b',
+            'cancelled': '#ef4444',
+        }
+        return color_map.get(self.status, '#6b7280')
+    
+    def is_overdue(self):
+        """检查目标是否过期"""
+        from datetime import date
+        return date.today() > self.end_date and self.status == 'active'
+    
+    def days_remaining(self):
+        """返回剩余天数"""
+        from datetime import date
+        remaining = (self.end_date - date.today()).days
+        return max(0, remaining)
+    
+    def get_achievement_level(self):
+        """获取成就等级"""
+        if self.progress_percentage >= 100:
+            return "🏆 目标达成"
+        elif self.progress_percentage >= 90:
+            return "🎯 即将达成"
+        elif self.progress_percentage >= 75:
+            return "💪 努力中"
+        elif self.progress_percentage >= 50:
+            return "📈 进步中"
+        elif self.progress_percentage >= 25:
+            return "🌱 起步中"
+        else:
+            return "🚀 开始行动"
+    
+    def __str__(self):
+        return f"{self.user.userName} - {self.title} ({self.progress_percentage:.1f}%)"
+
+
+class GoalProgress(models.Model):
+    """目标进度记录模型"""
+    goal = models.ForeignKey(HealthGoal, on_delete=models.CASCADE, related_name='progress_records')
+    date = models.DateField(help_text="记录日期")
+    value = models.FloatField(help_text="当日数值")
+    notes = models.TextField(blank=True, help_text="备注")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['goal', 'date']
+        ordering = ['-date']
+        verbose_name = "目标进度记录"
+        verbose_name_plural = "目标进度记录"
+    
+    def __str__(self):
+        return f"{self.goal.title} - {self.date} - {self.value}{self.goal.unit}"
