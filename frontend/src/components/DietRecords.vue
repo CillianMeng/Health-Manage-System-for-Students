@@ -895,6 +895,7 @@ onMounted(async () => {
   font-size: 14px;
   transition: all 0.2s ease;
   background: #fafafa;
+  color: black;
 }
 
 .form-input:focus {

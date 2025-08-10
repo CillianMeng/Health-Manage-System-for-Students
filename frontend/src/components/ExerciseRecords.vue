@@ -244,11 +244,11 @@
           </div>
           
           <div class="form-actions">
-            <button type="button" @click="closeModal" class="btn btn-secondary btn-lg">
+            <button type="button" @click="closeModal" class="btn-secondary">
               <span class="btn-icon">↩️</span>
               取消
             </button>
-            <button type="submit" :disabled="saving" class="btn btn-primary btn-lg submit-btn">
+            <button type="submit" :disabled="saving" class="btn-primary">
               <span v-if="saving" class="loading-content">
                 <span class="loading-spinner"></span>
                 保存中...
@@ -851,14 +851,28 @@ option[value=""] {
   border-top: 1px solid #f3f4f6;
 }
 
-.submit-btn {
-  min-width: 140px;
-  position: relative;
+.btn-primary {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.submit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
 }
 
 .loading-content, .submit-content {

@@ -1,4 +1,4 @@
-from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference, HealthReport
+from .models import User, SleepRecord, ExerciseRecord, DietRecord, FoodCalorieReference, HealthReport, GoalProgress, HealthGoal
 from rest_framework import serializers
 from .utils import verify_user_password
 from datetime import datetime, date
@@ -355,3 +355,101 @@ class HealthReportStatisticsSerializer(serializers.Serializer):
     improvement_trend = serializers.CharField(read_only=True)
     score_history = serializers.ListField(read_only=True)
     category_averages = serializers.DictField(read_only=True)
+
+
+class GoalProgressSerializer(serializers.ModelSerializer):
+    """目标进度记录序列化器"""
+    
+    class Meta:
+        model = GoalProgress
+        fields = ['id', 'date', 'value', 'notes', 'created_at']
+        read_only_fields = ['created_at']
+
+
+class HealthGoalSerializer(serializers.ModelSerializer):
+    """健康目标序列化器"""
+    progress_percentage = serializers.ReadOnlyField()
+    progress_color = serializers.SerializerMethodField(read_only=True)
+    status_color = serializers.SerializerMethodField(read_only=True)
+    achievement_level = serializers.SerializerMethodField(read_only=True)
+    days_remaining = serializers.SerializerMethodField(read_only=True)
+    is_overdue = serializers.SerializerMethodField(read_only=True)
+    recent_progress = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = HealthGoal
+        fields = [
+            'id', 'goal_type', 'title', 'description',
+            'target_value', 'current_value', 'unit',
+            'frequency', 'start_date', 'end_date',
+            'status', 'progress_percentage', 'progress_color',
+            'status_color', 'achievement_level', 'days_remaining',
+            'is_overdue', 'reminder_enabled', 'reminder_time',
+            'recent_progress', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['progress_percentage', 'created_at', 'updated_at']
+    
+    def get_progress_color(self, obj):
+        return obj.get_progress_color()
+    
+    def get_status_color(self, obj):
+        return obj.get_status_display_color()
+    
+    def get_achievement_level(self, obj):
+        return obj.get_achievement_level()
+    
+    def get_days_remaining(self, obj):
+        return obj.days_remaining()
+    
+    def get_is_overdue(self, obj):
+        return obj.is_overdue()
+    
+    def get_recent_progress(self, obj):
+        """获取最近7天的进度记录"""
+        from datetime import date, timedelta
+        end_date = date.today()
+        start_date = end_date - timedelta(days=6)
+        
+        progress_records = obj.progress_records.filter(
+            date__gte=start_date,
+            date__lte=end_date
+        ).order_by('date')
+        
+        return GoalProgressSerializer(progress_records, many=True).data
+
+
+class HealthGoalCreateSerializer(serializers.ModelSerializer):
+    """创建健康目标序列化器"""
+    
+    class Meta:
+        model = HealthGoal
+        fields = [
+            'goal_type', 'title', 'description',
+            'target_value', 'unit', 'frequency',
+            'start_date', 'end_date',
+            'reminder_enabled', 'reminder_time'
+        ]
+    
+    def validate_end_date(self, value):
+        """验证结束日期"""
+        start_date = self.initial_data.get('start_date')
+        if start_date and value <= datetime.strptime(start_date, '%Y-%m-%d').date():
+            raise serializers.ValidationError("结束日期必须晚于开始日期")
+        return value
+    
+    def validate_target_value(self, value):
+        """验证目标数值"""
+        if value <= 0:
+            raise serializers.ValidationError("目标数值必须大于0")
+        return value
+
+
+class HealthGoalStatsSerializer(serializers.Serializer):
+    """健康目标统计序列化器"""
+    total_goals = serializers.IntegerField(read_only=True)
+    active_goals = serializers.IntegerField(read_only=True)
+    completed_goals = serializers.IntegerField(read_only=True)
+    completion_rate = serializers.FloatField(read_only=True)
+    average_progress = serializers.FloatField(read_only=True)
+    goals_by_type = serializers.DictField(read_only=True)
+    recent_achievements = serializers.ListField(read_only=True)

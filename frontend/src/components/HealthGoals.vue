@@ -1263,6 +1263,39 @@ function getGoalCardClass(goal) {
     transform: scale(1.1);
 }
 
+.header-icon {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-icon {
+    font-size: 24px;
+    display: block;
+}
+
+.header-text {
+  flex: 1;
+  margin-left: 16px;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.modal-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
 /* 表单样式 */
 .goal-form,
 .progress-form {

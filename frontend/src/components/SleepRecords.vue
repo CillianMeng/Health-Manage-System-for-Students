@@ -18,7 +18,7 @@
           <p class="stat-label">平均睡眠</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">⭐</div>
         <div class="stat-content">
@@ -26,7 +26,7 @@
           <p class="stat-label">平均质量</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">📊</div>
         <div class="stat-content">
@@ -34,7 +34,7 @@
           <p class="stat-label">本周记录</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">⏰</div>
         <div class="stat-content">
@@ -49,7 +49,7 @@
       <div class="section-header">
         <h2>💤 睡眠时间分析</h2>
       </div>
-      
+
       <div class="bedtime-overview">
         <div class="bedtime-card">
           <div class="bedtime-main">
@@ -62,14 +62,13 @@
         </div>
       </div>
 
-      <div v-if="weeklyStats.bedtime_analysis.recommendations && weeklyStats.bedtime_analysis.recommendations.length > 0" 
-           class="bedtime-recommendations">
+      <div
+        v-if="weeklyStats.bedtime_analysis.recommendations && weeklyStats.bedtime_analysis.recommendations.length > 0"
+        class="bedtime-recommendations">
         <h3>🎯 个性化建议</h3>
         <div class="recommendations-list">
-          <div v-for="(recommendation, index) in weeklyStats.bedtime_analysis.recommendations" 
-               :key="index" 
-               class="recommendation-item"
-               :class="getRecommendationClass(recommendation)">
+          <div v-for="(recommendation, index) in weeklyStats.bedtime_analysis.recommendations" :key="index"
+            class="recommendation-item" :class="getRecommendationClass(recommendation)">
             {{ recommendation }}
           </div>
         </div>
@@ -80,7 +79,7 @@
     <div class="chart-section">
       <div class="section-header">
         <h2>一周睡眠趋势</h2>
-        <button @click="refreshWeeklyData" class="btn-secondary" :disabled="loading">
+        <button @click="refreshWeeklyData" class="btn-primary" :disabled="loading">
           刷新
         </button>
       </div>
@@ -91,22 +90,22 @@
     <div class="records-section">
       <div class="section-header">
         <h2>睡眠记录</h2>
-        <button @click="refreshRecords" class="btn-secondary" :disabled="loading">
+        <button @click="refreshRecords" class="btn-primary" :disabled="loading">
           刷新
         </button>
       </div>
-      
+
       <div v-if="loading" class="loading">
         <div class="loading-spinner"></div>
         <p>加载中...</p>
       </div>
-      
+
       <div v-else-if="records.length === 0" class="empty-state">
         <div class="empty-icon">😴</div>
         <h3>暂无睡眠记录</h3>
         <p>点击"添加记录"开始记录您的睡眠数据</p>
       </div>
-      
+
       <div v-else class="records-table">
         <div class="table-header">
           <div class="col-date">日期</div>
@@ -116,7 +115,7 @@
           <div class="col-quality">质量评分</div>
           <div class="col-actions">操作</div>
         </div>
-        
+
         <div class="table-body">
           <div v-for="record in records" :key="record.id" class="table-row">
             <div class="col-date">{{ formatDate(record.sleep_date) }}</div>
@@ -140,51 +139,49 @@
     <!-- 添加/编辑记录模态框 -->
     <div v-if="showAddForm || editingRecord" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ editingRecord ? '编辑睡眠记录' : '添加睡眠记录' }}</h3>
-          <button @click="closeModal" class="modal-close">✕</button>
+        <div class="modal-header sleep-header">
+          <div class="header-icon">
+            <span class="form-icon">😴</span>
+          </div>
+          <div class="header-text">
+            <h3 class="modal-title">{{ editingRecord ? '编辑睡眠记录' : '添加睡眠记录' }}</h3>
+          </div>
+          <button @click="closeModal" class="modal-close-btn">✕</button>
         </div>
-        
+
         <form @submit.prevent="submitRecord" class="record-form">
           <div class="form-group">
-            <label for="sleep_date">睡眠日期</label>
-            <input 
-              type="date" 
-              id="sleep_date" 
-              v-model="formData.sleep_date" 
-              required
-              :max="today"
-            >
+            <label for="sleep_date" class="form-label">
+              <span class="label-icon">
+                🗓️
+              </span>
+              睡眠日期
+            </label>
+            <input type="date" id="sleep_date" v-model="formData.sleep_date" required :max="today" class="form-input">
           </div>
-          
+
           <div class="form-group">
             <label for="bedtime">入睡时间</label>
-            <input 
-              type="time" 
-              id="bedtime" 
-              v-model="formData.bedtime" 
-              required
-            >
+            <input type="time" id="bedtime" v-model="formData.bedtime" required class="form-input">
           </div>
-          
+
           <div class="form-group">
             <label for="wake_time">起床时间</label>
-            <input 
-              type="time" 
-              id="wake_time" 
-              v-model="formData.wake_time" 
-              required
-            >
+            <input type="time" id="wake_time" v-model="formData.wake_time" required class="form-input">
           </div>
-          
+
           <div v-if="formError" class="error-message">
             {{ formError }}
           </div>
-          
+
           <div class="form-actions">
-            <button type="button" @click="closeModal" class="btn-secondary">取消</button>
+            <button type="button" @click="closeModal" class="btn-secondary">
+              <span class="btn-icon">↩️</span>
+              取消
+            </button>
             <button type="submit" class="btn-primary" :disabled="submitting">
-              {{ submitting ? '保存中...' : (editingRecord ? '更新' : '添加') }}
+              <span class="btn-icon">{{ editRecord ? '✏️' : '+' }}</span>
+              {{ submitting ? '保存中...' : (editingRecord ? '更新' : '添加') }}记录
             </button>
           </div>
         </form>
@@ -201,12 +198,12 @@
           <h3 class="delete-title">确认删除睡眠记录</h3>
           <button @click="deleteConfirm = null" class="modal-close">✕</button>
         </div>
-        
+
         <div class="modal-body delete-body">
           <div class="delete-warning">
             <p class="delete-message">您确定要删除这条睡眠记录吗？此操作无法撤销。</p>
           </div>
-          
+
           <div class="delete-record-info">
             <div class="record-detail-card">
               <div class="detail-row">
@@ -234,7 +231,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="form-actions delete-actions">
           <button @click="deleteConfirm = null" class="btn-secondary cancel-btn">
             <span class="btn-icon">↩️</span>
@@ -281,14 +278,14 @@ const today = computed(() => {
 onMounted(async () => {
   // 确保认证服务已初始化
   await tokenAuthService.initialize();
-  
+
   // 检查是否已登录
   if (!tokenAuthService.isLoggedIn()) {
     console.warn('用户未登录，无法加载睡眠记录');
     alert('请先登录后再访问睡眠记录页面');
     return;
   }
-  
+
   loadRecords();
   loadWeeklyStats();
 });
@@ -297,17 +294,17 @@ onMounted(async () => {
 async function apiCall(url, options = {}) {
   try {
     const response = await tokenAuthService.request(url, options);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     // 如果是204 No Content，直接返回null而不解析JSON
     if (response.status === 204) {
       return null;
     }
-    
+
     // 检查响应是否有内容
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
@@ -363,20 +360,20 @@ async function refreshWeeklyData() {
 // 提交记录
 async function submitRecord() {
   if (!validateForm()) return;
-  
+
   try {
     submitting.value = true;
     formError.value = '';
-    
+
     let responseData;
-    
+
     if (editingRecord.value) {
       // 更新记录
       responseData = await apiCall(`/sleep-records/${editingRecord.value.id}/`, {
         method: 'PUT',
         body: JSON.stringify(formData)
       });
-      
+
       // 直接更新前端列表中的记录
       const index = records.value.findIndex(r => r.id === editingRecord.value.id);
       if (index !== -1 && responseData.record) {
@@ -388,23 +385,23 @@ async function submitRecord() {
         method: 'POST',
         body: JSON.stringify(formData)
       });
-      
+
       // 将新记录添加到前端列表
       if (responseData && responseData.record) {
         records.value.unshift(responseData.record); // 添加到列表开头
       }
     }
-    
+
     closeModal();
     // 更新统计数据
     await loadWeeklyStats();
-    
+
     // 为了确保数据完全一致，重新加载所有数据
     setTimeout(async () => {
       await loadRecords();
       await loadWeeklyStats();
     }, 300);
-    
+
     // 为了确保数据一致性，延迟一小段时间后再次刷新
     setTimeout(async () => {
       try {
@@ -436,23 +433,23 @@ function deleteRecord(record) {
 
 async function confirmDelete() {
   if (submitting.value) return; // 防止重复提交
-  
+
   try {
     submitting.value = true;
     const recordId = deleteConfirm.value.id;
-    
+
     // 立即清除确认对话框，防止重复删除
     deleteConfirm.value = null;
-    
+
     // 调用删除API
     await apiCall(`/sleep-records/${recordId}/`, {
       method: 'DELETE'
     });
-    
+
     // 删除成功后重新加载数据
     await loadRecords();
     await loadWeeklyStats();
-    
+
   } catch (error) {
     console.error('删除记录失败:', error);
     alert('删除记录失败: ' + error.message);
@@ -482,13 +479,13 @@ function validateForm() {
     formError.value = '请填写所有必填字段';
     return false;
   }
-  
+
   // 验证日期不能是未来
   if (formData.sleep_date > today.value) {
     formError.value = '睡眠日期不能是未来日期';
     return false;
   }
-  
+
   return true;
 }
 
@@ -547,6 +544,115 @@ function getRecommendationClass(recommendation) {
   background: var(--color-gray-100);
 }
 
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.sleep-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px 28px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.header-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-icon {
+  font-size: 24px;
+  display: block;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.label-icon {
+  font-size: 16px;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #fafafa;
+  color: black;
+}
+
+.form-input::placeholder {
+  color: #999;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-input:hover:not(:focus) {
+  border-color: #d1d5db;
+  background: white;
+}
+
 /* 删除模态框美化样式 */
 .delete-modal {
   max-width: 480px;
@@ -574,8 +680,15 @@ function getRecommendationClass(recommendation) {
 }
 
 @keyframes warning-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .delete-title {
@@ -728,7 +841,6 @@ function getRecommendationClass(recommendation) {
 
 .btn-icon {
   font-size: 14px;
-  margin-right: 6px;
 }
 
 /* 按钮加载状态 */
@@ -737,8 +849,13 @@ function getRecommendationClass(recommendation) {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 响应式设计 */
@@ -747,32 +864,32 @@ function getRecommendationClass(recommendation) {
     max-width: 95vw;
     margin: 20px;
   }
-  
+
   .delete-header {
     padding: 20px 16px;
   }
-  
+
   .delete-body {
     padding: 20px 16px;
   }
-  
+
   .delete-actions {
     padding: 16px;
     flex-direction: column;
   }
-  
+
   .cancel-btn,
   .delete-btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .detail-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-  
+
   .detail-value {
     font-size: 16px;
   }
@@ -952,17 +1069,17 @@ function getRecommendationClass(recommendation) {
     margin: 16px 0;
     padding: 20px;
   }
-  
+
   .bedtime-card {
     flex-direction: column;
     text-align: center;
     gap: 16px;
   }
-  
+
   .bedtime-time {
     font-size: 2rem;
   }
-  
+
   .recommendation-item {
     padding: 14px 16px;
     font-size: 0.9rem;

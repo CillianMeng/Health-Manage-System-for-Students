@@ -415,6 +415,9 @@ class HealthGoal(models.Model):
             self.progress_percentage = min(100, (self.current_value / self.target_value) * 100)
         else:
             self.progress_percentage = 0
+        # 如果之前已完成，但由于调整 target_value 或 current_value 现在不足 100%，则自动恢复为进行中
+        if self.status == 'completed' and self.progress_percentage < 100:
+            self.status = 'active'
     
     def update_current_value(self, value):
         """更新当前数值"""

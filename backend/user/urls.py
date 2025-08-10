@@ -22,7 +22,11 @@ from .views import (
     HealthReportLatestView,
     HealthReportListView,
     HealthReportDetailView,
-    HealthReportStatisticsView
+    HealthReportStatisticsView,
+    HealthGoalView,
+    HealthGoalDetailView,
+    HealthGoalProgressView,
+    HealthGoalStatsView
 )
 
 urlpatterns = [
@@ -60,4 +64,10 @@ urlpatterns = [
     path('health-reports/', HealthReportListView.as_view(), name='health_report_list'),
     path('health-reports/<int:report_id>/', HealthReportDetailView.as_view(), name='health_report_detail'),
     path('health-reports/statistics/', HealthReportStatisticsView.as_view(), name='health_report_statistics'),
+    
+    # 健康目标相关路由
+    path('health-goals/', HealthGoalView.as_view(), name='health_goals'),
+    path('health-goals/<int:pk>/', HealthGoalDetailView.as_view(), name='health_goal_detail'),
+    path('health-goals/<int:goal_id>/progress/', HealthGoalProgressView.as_view(), name='health_goal_progress'),
+    path('health-goals/stats/', HealthGoalStatsView.as_view(), name='health_goal_stats'),
 ]
